@@ -172,11 +172,14 @@ class MultiParent(Widget):
 
   def draw(self):
     #print self, self.pos, self.size
-    #clip = self.renderer.get_clip()
-    #self.renderer.set_clip(pygame.Rect(self.pos, self.size))
+    clip = self.renderer.get_clip()
+    w, h = self.size
+    x, y = self.pos
+    self.renderer.set_clip(pygame.Rect(self.pos, self.size))
     for child in self.children:
       child.draw()
-    #self.renderer.set_clip(clip)
+    self.renderer.set_clip(clip)
+    #self.renderer.rect(x, y, x+w-1, y+h-1, red)
 
 class VBox(MultiParent):
   def get_size(self):
@@ -195,6 +198,7 @@ class VBox(MultiParent):
     x, y = pos
     w, h = size
     ew, eh = sub(size, self.size) #extra width and height
+    self.size = size
     cex, cey = self.childexp
     csx, csy = self.childshrink
     euy, suy = 0, 0
@@ -248,6 +252,7 @@ class HBox(MultiParent):
     x, y = pos
     w, h = size
     ew, eh = sub(size, self.size)
+    self.size = size
     cex, cey = self.childexp
     csx, csy = self.childshrink
     eux, sux = 0, 0

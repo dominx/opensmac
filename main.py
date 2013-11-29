@@ -39,7 +39,7 @@ class Square():
   def __repr__(self):
     return str(self.pos)
 
-  #todo restrictions, buildings, projects
+  #todo restrictions, buildings, projects, tech
 
   @property
   def nutrient(self, base = None, faction = None):
@@ -71,6 +71,8 @@ class Square():
       nuts.add(1, 'ocean')
       if self.veg == 'farm':
         nuts.add(2, 'kelp')
+      if self.veg == 'fungus':
+        nuts.cap(0, 'fungus')
     return nuts
 
   @property
@@ -117,7 +119,7 @@ class Square():
         eng.add(1, 'forest')
       else:
         if self.improv == 'collector':
-          eng.add((self.elev-1)/1000, 'collector')
+          eng.add(((self.elev-1)/1000)+1, 'collector')
         if self.improv == 'borehole':
           eng.add(6, 'borehole')
     else:

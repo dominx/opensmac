@@ -47,10 +47,10 @@ class SugarDict:
   def __init__(self, lst):
     for key, value in lst:
       setattr(self, key.lower(), value)
-      setattr(self, 'rawdata', lst)
+    setattr(self, 'rawdata', lst)
 
-def do(): pass 
-do()
+#def do(): pass 
+#do()
 
 rawfiles = filelines()
 #shfiles =  [(k, v) for k, v in files if v[0][0] == '#' and v[0][1] != '#'] #single hash files 
