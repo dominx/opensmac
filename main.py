@@ -40,7 +40,7 @@ class Square():
     return str(self.pos)
 
   #todo restrictions, buildings, projects, tech
-
+  # add_improv, rem_improv
   @property
   def nutrient(self, base = None, faction = None):
     nuts = DetailedValue(0)
@@ -135,17 +135,38 @@ class Node():
 
 
 class Base():
-  def __init__(self, faction, name):
+  def __init__(self, maps, faction, name):
     self.faction = faction
     self.name = name
     self.pop = 1#random.randint(1, 12)
     self.nuts = 0
+    self.mins = 0
     self.facs = []
 
+  def turn(self):
+    squares = [self.map.square(x, y) for x, y in workers]
+    nuts = sum([s.nutrient.val for s in squares])
+    self.nuts += nuts
+    grow_thres = (self.pop + 1) * (10 + self.growth.val)
+    if self.nuts > grow_thres:
+      self.nuts -= grow_thres
+      self.pop += 1 
+    #drones?
+    #autoplace new workers
+
+    mins = sum([s.mineral for s in squares])
+    eng = sum([s.energy for s in squares])
+    psych = (eng * self.faction.psych)/100
+    econ = (eng * self.faction.econ)/100
+    labs = (eng * self.faction.labs)/100
+    
 
 class Faction():
   def __init__(self, key):
     self.key = key
+    self.econ = 40
+    self.psych = 30
+    self.labs = 30
     #self.bases = []
   def __repr__(self):
     return self.key
@@ -156,15 +177,18 @@ class GameRoot():
       self.load(arg)
     else:
       self.new() 
+
   def load(self, fname = 'savegame'):
     with open(fname, 'rb') as f:
       data = f.read()
       self.state = pickle.loads(zlib.decompress(data))
       #self.state = pickle.load(f)
+
   def save(self, fname = 'savegame'):
     with open(fname, 'wb') as f:
       f.write(zlib.compress(pickle.dumps(self.state)))
       #pickle.dump(self.state, f)
+
   def new(self):
     self.state = GameState() 
 
@@ -228,7 +252,7 @@ class Map():
 
     for f in faction_keys:
       x, y = self.random()
-      self.squares[y][x].base = Base(f, "Base %d,%d" % (x, y))
+      self.squares[y][x].base = Base(self, f, "Base %d,%d" % (x, y))
 
     for y in range(h):
       for x in range(w):
@@ -236,6 +260,8 @@ class Map():
           pass 
 
     self.calc_nodes()
+  
+  #calc_rivers, calc_rainfall
 
   def random(self):
     x = random.randint(0, self.w-1)

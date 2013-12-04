@@ -1,3 +1,4 @@
+import os
 import pygame.image
 import pygame
 import pygame.transform
@@ -5,6 +6,7 @@ from pygame.rect import Rect
 
 shadowmask = (253, 189, 118)
 
+pcx_dir = 'pcx'
 
 def pic(surf, rect, colorkey = 255, colorkey2 = None):
   tmp = surf.subsurface(Rect(rect)).copy()
@@ -78,18 +80,18 @@ images = None
 def init():
   global images
  
-  texture = pygame.image.load('./pcx/texture.pcx') 
-  ter1 = pygame.image.load('./pcx/ter1.pcx') 
-  #shelf = getisopic(texture, m, 280, 79, 56, 56)
-  newicons = pygame.image.load('./pcx/newicons.pcx')
+  texture = pygame.image.load(os.path.join(pcx_dir,'texture.pcx')) 
+  ter1 = pygame.image.load(os.path.join(pcx_dir,'ter1.pcx')) 
+  newicons = pygame.image.load(os.path.join(pcx_dir,'newicons.pcx')) 
 
   def faction(name):
-    img = pygame.image.load('./pcx/%s.pcx' % name) 
+    img = pygame.image.load(os.path.join(pcx_dir, '%s.pcx' % name))
     return {
       'base' : [ScaledImage(pic(img, (x, 1, 100, 75)), vscale = 3) for x in [1, 101, 203, 304]],
       'wbase' : [ScaledImage(pic(img, (x, 229, 100, 75)), vscale = 3) for x in [1, 101, 203, 304]],
     }
     
+  #shelf = getisopic(texture, m, 280, 79, 56, 56)
   #land = [rotpic(texture, (1, 58, 56, 56), a = 45+90*i) for i in range(4)]
   #land = [CachedTexture(p) for p in land]
 
