@@ -39,6 +39,7 @@ class Square():
     self.road = None
     self.veg = None
     self.base = None
+    self.worked = False
 
   def __repr__(self):
     return str(self.pos)
@@ -48,93 +49,106 @@ class Square():
   def nutrient(self, base = None, faction = None):
     if base: faction = base.faction
     nuts = DetailedValue(0)
-    if self.bonus == 'nutrient':
-      nuts.add(2, 'bonus')
-    if self.elev > 0:
-      if self.veg == 'fungus':
-        nuts.cap(0, 'fungus')
-      elif self.veg == 'forest':
-        nuts.add(1, 'forest')
-      else:
-        nuts.add(self.moist, 'moisture')
-        if self.veg == 'farm':
-          nuts.add(1, 'farm')
-        if self.veg == 'enricher':
-          nuts.add(1, 'farm')
-          nuts.imul(1.5, 'enricher')
-        if self.improv == 'condenser':
-          nuts.imul(1.5, 'condenser')
-      if self.improv == 'mine':
-        #if nuts.val > 0:
-        nuts.add(-1, 'mine')
-        nuts.lcap(0, '')
-      if self.improv == 'borehole':
-        nuts.cap(0, 'borehole')
-      #todo restrict
+    if self.base:
+      nuts.add(2, 'base square')
     else:
-      nuts.add(1, 'ocean')
-      if self.veg == 'farm':
-        nuts.add(2, 'kelp')
-      if self.veg == 'fungus':
-        nuts.cap(0, 'fungus')
+      if self.bonus == 'nutrient':
+        nuts.add(2, 'bonus')
+      if self.elev > 0:
+        if self.veg == 'fungus':
+          nuts.cap(0, 'fungus')
+        elif self.veg == 'forest':
+          nuts.add(1, 'forest')
+        else:
+          nuts.add(self.moist, 'moisture')
+          if self.veg == 'farm':
+            nuts.add(1, 'farm')
+          if self.veg == 'enricher':
+            nuts.add(1, 'farm')
+            nuts.imul(1.5, 'enricher')
+          if self.improv == 'condenser':
+            nuts.imul(1.5, 'condenser')
+        if self.improv == 'mine':
+          #if nuts.val > 0:
+          nuts.add(-1, 'mine')
+          nuts.lcap(0, '')
+        if self.improv == 'borehole':
+          nuts.cap(0, 'borehole')
+        #todo restrict
+      else:
+        nuts.add(1, 'ocean')
+        if self.veg == 'farm':
+          nuts.add(2, 'kelp')
+        if self.veg == 'fungus':
+          nuts.cap(0, 'fungus')
     return nuts
 
   def mineral(self, base = None, faction = None):
     if base: faction = base.faction
     mins = DetailedValue(0)
-    if self.bonus == 'mineral':
-      mins.add(2, 'bonus')
-    if self.elev > 0:
-      if self.veg == 'fungus':
-        mins.cap(0, 'fungus')
-        if self.improv == 'borehole':
-          mins.add(6, 'borehole')
-      elif self.veg == 'forest':
-        mins.add(2, 'forest')
-      else:
-        if self.improv == 'borehole':
-          mins.add(6, 'borehole')
-        else:
-          if self.rock:
-            mins.add(1, 'rock/roll')
-          if self.improv == 'mine':
-            if self.rock == 2:
-              mins.add(2, 'mine+rocky')
-              if self.bonus == 'mineral':
-                mins.add(1, 'mine+rocky+bonus')
-              if self.road:
-                mins.add(1, 'mine+rocky+road')
-            else:
-              mins.add(1, 'mine')
+    if self.base:
+      mins.add(1, 'base square')
     else:
-      if self.improv == 'platform':
-        mins.add(1, 'platform')
-      if self.veg == 'fungus':
-        mins.cap(0, 'fungus')
+      if self.bonus == 'mineral':
+        mins.add(2, 'bonus')
+      if self.elev > 0:
+        if self.veg == 'fungus':
+          if self.improv == 'borehole':
+            mins.add(6, 'borehole')
+          else:
+            mins.cap(0, 'fungus')
+        elif self.veg == 'forest':
+          mins.add(2, 'forest')
+        else:
+          if self.improv == 'borehole':
+            mins.add(6, 'borehole')
+          else:
+            if self.rock:
+              mins.add(1, 'rock/roll')
+            if self.improv == 'mine':
+              if self.rock == 2:
+                mins.add(2, 'mine+rocky')
+                if self.bonus == 'mineral':
+                  mins.add(1, 'mine+rocky+bonus')
+                if self.road:
+                  mins.add(1, 'mine+rocky+road')
+              else:
+                mins.add(1, 'mine')
+      else:
+        if self.improv == 'platform':
+          mins.add(1, 'platform')
+        if self.veg == 'fungus':
+          mins.cap(0, 'fungus')
     return mins
 
   def energy(self, base = None, faction = None):
     if base: faction = base.faction
     eng = DetailedValue(0)
-    if self.bonus == 'energy':
-      eng.add(2, 'bonus')
-    if self.elev > 0:
-      if self.veg == 'fungus':
-        eng.cap(0, 'fungus')
-        if self.improv == 'borehole':
-          eng.add(6, 'borehole')
-      elif self.veg == 'forest':
-        eng.add(1, 'forest')
-      else:
-        if self.improv == 'collector':
-          eng.add(((self.elev-1)/1000)+1, 'collector')
-        if self.improv == 'borehole':
-          eng.add(6, 'borehole')
+    if self.base:
+      eng.add(1, 'base square')
+      #econo
     else:
-      if self.improv == 'harness':
-        eng.add(2, 'harness') 
-      if self.veg == 'fungus':
-        eng.cap(0, 'fungus')
+      if self.bonus == 'energy':
+        eng.add(2, 'bonus')
+      if self.elev > 0:
+        if self.veg == 'fungus':
+          if self.improv == 'borehole':
+            eng.add(6, 'borehole')
+          else:
+            eng.cap(0, 'fungus')
+        elif self.veg == 'forest':
+          eng.add(1, 'forest')
+        else:
+          if self.improv == 'collector':
+            eng.add(((self.elev-1)/1000)+1, 'collector')
+          if self.improv == 'borehole':
+            eng.add(6, 'borehole')
+      else:
+        if self.improv == 'harness':
+          eng.add(2, 'harness') 
+        if self.veg == 'fungus':
+          eng.cap(0, 'fungus')
+      #econo
     return eng
 
 class Node():
@@ -202,13 +216,16 @@ class Base():
   
   def toggle_worker(self, pos):
     if pos in self.map.mcoor_lst(self.pos, base_coverage) and pos != self.pos:
+      square = self.map.tsquare(pos)
       if pos not in self.worked_squares:
-        if not self.map.tsquare(pos).base:
+        if not square.base and not square.worked:
           if self.specs > 0:
             self.worked_squares.append(pos)
+            square.worked = True
             self.specs -= 1
       else:
         self.worked_squares.remove(pos)
+        square.worked = False
         self.specs += 1
            
 
@@ -361,7 +378,7 @@ class Map():
       x, y = self.random()
       self.squares[y][x].veg = random.choice(['farm', 'fungus', 'forest'])
 
-    for i in range(100):
+    for i in range(10):
       x, y = self.random()
       self.squares[y][x].bonus = random.choice(['nutrient', 'mineral', 'energy'])
 
@@ -582,6 +599,7 @@ class MapWidget(Widget):
           square = self.map.msquares(ex, ey)
 
           if square:
+            lev = int((square.elev+999)/1000)
             if square.base:
               base = square.base 
               size = min(base.pop / 3, 3)
@@ -609,8 +627,8 @@ class MapWidget(Widget):
             if square.base:
               base = square.base 
               w, h = self.renderer.font_size(base.name)
-              self.renderer.font_render(base.name, images2[base.faction.key]['textcolor1'], (l+1+2*m-w/2, t+1+(m*1.5))) 
-              self.renderer.font_render(base.name, images2[base.faction.key]['textcolor0'], (l+2*m-w/2, t+(m*1.5))) 
+              self.renderer.font_render(base.name, images2[base.faction.key]['textcolor1'], (l+1+2*m-w/2, t+1+(m*1.8))) 
+              self.renderer.font_render(base.name, images2[base.faction.key]['textcolor0'], (l+2*m-w/2, t+(m*1.8))) 
               self.renderer.font_render(str(base.pop), black, (l, t-m), background = images2[base.faction.key]['color0'], bold = True) 
     
     self.renderer.set_clip(clip)
