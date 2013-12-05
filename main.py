@@ -101,7 +101,7 @@ class Square():
             if self.rock == 2:
               mins.add(2, 'mine+rocky')
               if self.bonus == 'mineral':
-                mins.add(1, 'mine+bonus')
+                mins.add(1, 'mine+rocky+bonus')
               if self.road:
                 mins.add(1, 'mine+rocky+road')
             else:
@@ -295,7 +295,8 @@ class GameRoot():
 
   def turn(self):
     #multi 
-    self.state.end_turn()
+    for i in range(len(self.state.factions)):
+      self.state.end_turn()
 
 faction_keys = ['gaians', 'hive', 'univ', 'morgan', 'spartans', 'believe', 'peace']
 
@@ -349,18 +350,18 @@ class Map():
         self.squares[y][x].moist = random.randint(0, 2)
         self.squares[y][x].rock = random.randint(0, 2)
 
-    for i in range(300):
+    for i in range(50):
       x, y = self.random()
       if self.squares[y][x].elev > 0:
         self.squares[y][x].improv = random.choice(['mirror', 'condenser', 'borehole', 'bunker', 'collector', 'mine'])
       else:
         self.squares[y][x].improv = random.choice(['platform', 'harness'])
 
-    for i in range(100):
+    for i in range(200):
       x, y = self.random()
       self.squares[y][x].veg = random.choice(['farm', 'fungus', 'forest'])
 
-    for i in range(150):
+    for i in range(100):
       x, y = self.random()
       self.squares[y][x].bonus = random.choice(['nutrient', 'mineral', 'energy'])
 
@@ -474,35 +475,39 @@ class MapWidget(Widget):
     w, h = (sw / (2*m)) +2, (sh / m) + 2
     clip = self.renderer.get_clip()
     self.renderer.set_clip(Rect(self.pos, self.size))
+    def ltrb(x, y):
+      l, t = sx + (x-1)*2*m, sy + (y-1)*m
+      r, b =  sx + (x+1)*2*m, sy + (y+1)*m
+      return l, t, r, b
+    def cltrb(x, y):
+      ct, cl = l + 2*m, t + m 
+      cb, cr = l + 2*m, t + m
+      return ct, cl, cb, cr
+    def get_elev(x, y):
+      if self.map.msquares(x, y):
+        return self.map.msquares(x, y).elev
+      return 0
+    def offs(ex, ey):
+      ot = (get_elev(ex, ey - 1)*m) /self.elev_factor
+      ob = (get_elev(ex, ey + 1)*m) /self.elev_factor
+      ocl = (get_elev(ex - 1, ey)*m) /self.elev_factor
+      ocr = (get_elev(ex + 1, ey)*m) /self.elev_factor
+      return ot, ob, ocl, ocr
     for y in range(h):
       for x in range(w): 
         if (x + y)%2 == 0:
-          l, t = sx + (x-1)*2*m, sy + (y-1)*m
-          r, b =  sx + (x+1)*2*m, sy + (y+1)*m
-         
-          ct, cl = l + 2*m, t + m 
-          cb, cr = l + 2*m, t + m
-
+          l, t, r, b = ltrb(x, y)
+          ct, cl, cb, cr = cltrb(x, y)
           ex = x + self.ox
           ey = y + self.oy
-
-          square = self.map.msquares(ex, ey)
-
-          def get_elev(x, y):
-            if self.map.msquares(x, y):
-              return self.map.msquares(x, y).elev
-            return 0
-          
-          ot = (get_elev(ex, ey - 1)*m) /self.elev_factor
-          ob = (get_elev(ex, ey + 1)*m) /self.elev_factor
-          ocl = (get_elev(ex - 1, ey)*m) /self.elev_factor
-          ocr = (get_elev(ex + 1, ey)*m) /self.elev_factor
-          offs = ot, ob, ocl, ocr
+          ot, ob, ocl, ocr = offs(ex, ey)           
+          off = ot, ob, ocl, ocr
           t -= ot
           b -= ob
           cl -= ocl
           cr -= ocr
          
+          square = self.map.msquares(ex, ey)
           if square:
             lev = int((square.elev+999)/1000)
 
@@ -517,20 +522,20 @@ class MapWidget(Widget):
                 self.blit(images2['kelp'](m), (l, b - 2*m))  
             else:
               n = ((ex % 5) + (ey % 7)) % 4
-              if square.moist == 0: self.blit(images2['land'][n](m, offs), (l, t + ot - 2*m))  
-              elif square.moist == 1: self.blit(images2['moist'][n](m, offs), (l, t + ot - 2*m))
-              elif square.moist == 2: self.blit(images2['wet'][n](m, offs), (l, t + ot - 2*m))
+              if square.moist == 0: self.blit(images2['land'][n](m, off), (l, t + ot - 2*m))  
+              elif square.moist == 1: self.blit(images2['moist'][n](m, off), (l, t + ot - 2*m))
+              elif square.moist == 2: self.blit(images2['wet'][n](m, off), (l, t + ot - 2*m))
               if square.veg == 'farm':
-                 if square.moist == 0: self.blit(images2['farmland1'](m, offs), (l, t + ot - 2*m))  
-                 elif square.moist > 0: self.blit(images2['farmland2'](m, offs), (l, t + ot - 2*m))  
+                 if square.moist == 0: self.blit(images2['farmland1'](m, off), (l, t + ot - 2*m))  
+                 elif square.moist > 0: self.blit(images2['farmland2'](m, off), (l, t + ot - 2*m))  
               elif square.veg == 'fungus':
-                 self.blit(images2['fungus1'](m, offs), (l, t + ot - 2*m))  
+                 self.blit(images2['fungus1'](m, off), (l, t + ot - 2*m))  
               elif square.veg == 'forest':
-                 self.blit(images2['forest1'](m, offs), (l, t + ot - 2*m))  
+                 self.blit(images2['forest1'](m, off), (l, t + ot - 2*m))  
 
   
-              if square.rock == 1: self.blit(images2['roll'][n](m, offs), (l, t + ot - 2*m))  
-              elif square.rock == 2: self.blit(images2['rock2'](m, offs), (l, t + ot - 2*m))  
+              if square.rock == 1: self.blit(images2['roll'][n](m, off), (l, t + ot - 2*m))  
+              elif square.rock == 2: self.blit(images2['rock2'](m, off), (l, t + ot - 2*m))  
  
             #todo road 
 
@@ -545,7 +550,6 @@ class MapWidget(Widget):
             self.renderer.naline(r, cr, ct, t, red)
             self.renderer.naline(l, cl, cb, b, red)
             self.renderer.naline(r, cr, cb, b, red)
-
 
  
           if square:
@@ -563,6 +567,21 @@ class MapWidget(Widget):
               #self.renderer.surface.blit(images2[square.improv](m), (l, max(b - 2*m, cl - m, cr - m)))  
               self.renderer.surface.blit(images2[square.improv](m), (l, b - 2*m))  
 
+    for y in range(h):
+      for x in range(w): 
+        if (x + y)%2 == 0:
+          l, t, r, b = ltrb(x, y)
+          ct, cl, cb, cr = cltrb(x, y)
+          ex = x + self.ox
+          ey = y + self.oy
+          ot, ob, ocl, ocr = offs(ex, ey)           
+          t -= ot
+          b -= ob
+          cl -= ocl
+          cr -= ocr
+          square = self.map.msquares(ex, ey)
+
+          if square:
             if square.base:
               base = square.base 
               size = min(base.pop / 3, 3)
@@ -570,11 +589,7 @@ class MapWidget(Widget):
                 self.blit(images2[base.faction.key]['base'][size](m), (l, b - 2.75*m))  
               else:
                 self.blit(images2[base.faction.key]['wbase'][size](m), (l, b - 2.75*m))  
-              self.renderer.font_render(base.name, white, (l, t)) 
 
-            if ex == 2 and ey == 2:
-              pass
-              #self.renderer.surface.blit(images2['farm1'](m), (l, b - 2*m))  
            
             if self.fbase:
               if self.map.tmcoor((ex, ey)) in self.fbase.worked_squares + [self.fbase.pos]:
@@ -590,9 +605,14 @@ class MapWidget(Widget):
                   self.blit(images2['ienergy'][min(eng, 8)], (l+2*m, t))
                 if nuts == 0 and mins == 0 and eng == 0:
                   self.blit(images2['inone'], (l+m, t))
-              
-
-          #if self.focus == (x, y):
+        
+            if square.base:
+              base = square.base 
+              w, h = self.renderer.font_size(base.name)
+              self.renderer.font_render(base.name, images2[base.faction.key]['textcolor1'], (l+1+2*m-w/2, t+1+(m*1.5))) 
+              self.renderer.font_render(base.name, images2[base.faction.key]['textcolor0'], (l+2*m-w/2, t+(m*1.5))) 
+              self.renderer.font_render(str(base.pop), black, (l, t-m), background = images2[base.faction.key]['color0'], bold = True) 
+    
     self.renderer.set_clip(clip)
 
   def do(self, events):
@@ -608,8 +628,8 @@ class MapWidget(Widget):
     l = (mx - my*2 + 2*m)/(4*m) 
     x, y = k+l, k-l
     ex, ey = x + self.ox, y + self.oy
-    ex, ey = self.map.tmcoor((ex, ey))
     if self.map.msquares(ex, ey):
+      ex, ey = self.map.tmcoor((ex, ey))
       if self.fbase and (ex, ey) in self.map.mcoor_lst(self.fbase.pos, base_coverage) and not self.map.tsquare((ex, ey)).base: 
           self.fbase.toggle_worker((ex, ey))
       else:

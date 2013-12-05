@@ -17,6 +17,7 @@ def pic(surf, rect, colorkey = 255, colorkey2 = None):
   pygame.PixelArray(tmp).replace(shadowmask, (0,0,0,128))
   return tmp
 
+
 def rotpic(surf, (l, t, w, h), a = 45):
   tmp = pic(surf, (l, t, w, h))
   return pygame.transform.rotate(tmp, a)
@@ -89,6 +90,10 @@ def init():
     return {
       'base' : [ScaledImage(pic(img, (x, 1, 100, 75)), vscale = 3) for x in [1, 102, 203, 304]],
       'wbase' : [ScaledImage(pic(img, (x, 229, 100, 75)), vscale = 3) for x in [1, 102, 203, 304]],
+      'color0' : img.get_at((1, 736)), 
+      'color1' : img.get_at((1, 744)), 
+      'textcolor0' : img.get_at((1, 752)), 
+      'textcolor1' : img.get_at((1, 760)), 
     }
     
   #shelf = getisopic(texture, m, 280, 79, 56, 56)
