@@ -63,7 +63,7 @@ class GDRenderer:
     self.set_font_attr(bold)
     w, h = self.font.size(text)
     return w, h - self.fontclip
-  def font_render(self, text, color, (x, y), (w, h), background = None, bold = False):
+  def font_render(self, text, color, (x, y), (w, h) = (666, 666), background = None, bold = False):
     self.set_font_attr(bold)
     if background:
       image = self.font.render(text, False, color, background)

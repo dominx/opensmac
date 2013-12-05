@@ -87,8 +87,8 @@ def init():
   def faction(name):
     img = pygame.image.load(os.path.join(pcx_dir, '%s.pcx' % name))
     return {
-      'base' : [ScaledImage(pic(img, (x, 1, 100, 75)), vscale = 3) for x in [1, 101, 203, 304]],
-      'wbase' : [ScaledImage(pic(img, (x, 229, 100, 75)), vscale = 3) for x in [1, 101, 203, 304]],
+      'base' : [ScaledImage(pic(img, (x, 1, 100, 75)), vscale = 3) for x in [1, 102, 203, 304]],
+      'wbase' : [ScaledImage(pic(img, (x, 229, 100, 75)), vscale = 3) for x in [1, 102, 203, 304]],
     }
     
   #shelf = getisopic(texture, m, 280, 79, 56, 56)
@@ -155,6 +155,7 @@ def init():
     'inutrient' : { n :pic(newicons, (174 + (n-1)*41, 304, 40, 40)) for n in range(1, 9)},
     'imineral' : { n :pic(newicons, (174 + (n-1)*41, 345, 40, 40)) for n in range(1, 9)},
     'ienergy' : { n :pic(newicons, (174 + (n-1)*41, 386, 40, 40)) for n in range(1, 9)},
+    'inone': pic(newicons, (1, 174, 22, 22)),
   }
   images.update(faction_images)
 
