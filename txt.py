@@ -3,6 +3,8 @@
 
 import os
 
+txt_dir = 'txt'
+
 def filenames(dir):
   for dirname, dirnames, filenames in os.walk(dir):
     if dirname == dir:
@@ -16,10 +18,10 @@ def cleanlines(lines):
 
 def filelines():
   retlines = []
-  for pathname, name in filenames("txt"):
+  for pathname, name in filenames(txt_dir):
     with open(pathname) as f:
       lines = cleanlines(f.readlines())
-      name = name.split('.')[0]
+      name = name.split('.')[0].lower()
       retlines.append((name, lines))
   return retlines
 
@@ -36,7 +38,7 @@ def shfileparse(lines):
               if not key[0] == ' ': # hack for note for translator in alpha.txt
                 sections.append((key, items))
               items = []
-            key = line[1:]
+            key = line[1:].lower()
           else: # '##' lines
             pass
       else: 
@@ -60,5 +62,8 @@ rawfiles = filelines()
 
 parsedfiles = [(f, SugarDict(shfileparse(lines))) for f, lines in rawfiles]
 data = SugarDict(parsedfiles)
+
+data2 = { f : dict(shfileparse(lines)) for f, lines in rawfiles}
+
 #for i in data.alphax.citizens:
 #  print i

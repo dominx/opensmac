@@ -1,4 +1,5 @@
 import random
+import copy
 from pygame.rect import Rect
 import cPickle as pickle
 import zlib
@@ -6,6 +7,7 @@ import zlib
 from widget import *
 import img
 import loop
+import rules
 
 class DetailedValue():
   def __init__(self, val = 0, desc = ''):
@@ -23,6 +25,8 @@ class DetailedValue():
   def lcap(self, n, desc):
     self.val = max(self.val, n)
     self.detail.append((self.val, desc + (" >=%d" % n)))
+  def copy(self):
+    return copy.copy(self)
 
 class Square():
   def __init__(self, pos):
@@ -41,8 +45,8 @@ class Square():
 
   #todo restrictions, buildings, projects, tech
   # add_improv, rem_improv
-  @property
   def nutrient(self, base = None, faction = None):
+    if base: faction = base.faction
     nuts = DetailedValue(0)
     if self.bonus == 'nutrient':
       nuts.add(2, 'bonus')
@@ -75,14 +79,16 @@ class Square():
         nuts.cap(0, 'fungus')
     return nuts
 
-  @property
   def mineral(self, base = None, faction = None):
+    if base: faction = base.faction
     mins = DetailedValue(0)
     if self.bonus == 'mineral':
       mins.add(2, 'bonus')
     if self.elev > 0:
       if self.veg == 'fungus':
         mins.cap(0, 'fungus')
+        if self.improv == 'borehole':
+          mins.add(6, 'borehole')
       elif self.veg == 'forest':
         mins.add(2, 'forest')
       else:
@@ -107,14 +113,16 @@ class Square():
         mins.cap(0, 'fungus')
     return mins
 
-  @property
   def energy(self, base = None, faction = None):
+    if base: faction = base.faction
     eng = DetailedValue(0)
     if self.bonus == 'energy':
       eng.add(2, 'bonus')
     if self.elev > 0:
       if self.veg == 'fungus':
         eng.cap(0, 'fungus')
+        if self.improv == 'borehole':
+          eng.add(6, 'borehole')
       elif self.veg == 'forest':
         eng.add(1, 'forest')
       else:
@@ -133,41 +141,134 @@ class Node():
   def __init__(self, elev):
     self.elev = elev
 
+base_coverage = [
+   (-3, -1), (-2, -2), (-1, -3),
+   (-3, 1), (-2, 0), (-1, -1), (0, -2), (1, -3),
+   (-2, 2), (-1, 1), (1, -1), (2, -2),
+   (-1, 3), (0, 2), (1, 1), (2, 0), (3, -1),
+   (1, 3), (2, 2), (3, 1)]
 
 class Base():
-  def __init__(self, maps, faction, name):
+  def __init__(self, map, faction, pos, name):
+    self.map = map
     self.faction = faction
     self.name = name
+    self.pos = pos
     self.pop = 1#random.randint(1, 12)
     self.nuts = 0
     self.mins = 0
     self.facs = []
+    self.worked_squares = []
+    self.calc_citizens()
+
+  @property
+  def growth(self):
+    gr = self.faction.growth.copy()
+    #creche, golden age; vats?
+    return gr
+
+  def die(self):
+    pass 
+
+  def calc_citizens(self):
+    self.talents = 0
+    self.drones = 0
+    self.specs = self.pop - self.drones - len(self.worked_squares)
 
   def turn(self):
-    squares = [self.map.square(x, y) for x, y in workers]
-    nuts = sum([s.nutrient.val for s in squares])
-    self.nuts += nuts
-    grow_thres = (self.pop + 1) * (10 + self.growth.val)
-    if self.nuts > grow_thres:
+    squares = [self.map.tsquare(pos) for pos in (self.worked_squares + [self.pos])]
+    nuts = sum([sq.nutrient(self).val for sq in squares])
+    self.nuts += nuts #- 2*self.pop
+    if self.nuts < 0:
+      self.nuts = 0
+      self.pop -= 1
+      if self.pop == 0:
+        self.die()
+
+    growth = self.faction.society('growth')
+    grow_thres = (self.pop + 1) * (10 - growth.val)
+    if self.nuts >= grow_thres:
       self.nuts -= grow_thres
       self.pop += 1 
+      self.calc_citizens()
     #drones?
     #autoplace new workers
 
-    mins = sum([s.mineral for s in squares])
-    eng = sum([s.energy for s in squares])
+    mins = sum([sq.mineral(self).val for sq in squares])
+    eng = sum([sq.energy(self).val for sq in squares])
     psych = (eng * self.faction.psych)/100
     econ = (eng * self.faction.econ)/100
     labs = (eng * self.faction.labs)/100
-    
+  
+  def toggle_worker(self, pos):
+    if pos in self.map.mcoor_lst(self.pos, base_coverage) and pos != self.pos:
+      if pos not in self.worked_squares:
+        if not self.map.tsquare(pos).base:
+          if self.specs > 0:
+            self.worked_squares.append(pos)
+            self.specs -= 1
+      else:
+        self.worked_squares.remove(pos)
+        self.specs += 1
+           
 
 class Faction():
-  def __init__(self, key):
+  def __init__(self, state, key):
+    self.state = state
     self.key = key
+    self.energy = 0
+    self.tech = []
+    self.bases = []
+
     self.econ = 40
     self.psych = 30
     self.labs = 30
-    #self.bases = []
+
+    self.politics = 'frontier'
+    self.economics = 'simple'
+    self.values = 'survival'
+    self.future = 'none'
+
+    self.models = {}
+    self.models['politics'] = 'frontier'
+    self.models['economics'] = 'simple'
+    self.models['values'] = 'survival'
+    self.models['future'] = 'none'
+
+    self.new_base()
+
+  def new_base(self):
+    x, y = self.state.map.random()
+    base = Base(self.state.map, self, (x, y), "Base %d,%d" % (x, y))
+    self.state.map.squares[y][x].base = base
+    self.bases.append(base)
+
+  def get_se_soc(self, fkey):
+    ret = []
+    for key, model in self.models.iteritems():
+      tech, lst = self.state.rules.models[model]
+      for val, name in lst:
+        if fkey == name:
+          ret.append((val, model))
+    return ret
+  
+  def get_faction_soc(self, fkey):
+    ret = []
+    for val, name in self.state.rules.factions[self.key].social:
+      if fkey == name:
+        ret.append((val, self.key)) 
+    return ret
+
+  def society(self, key):
+    val = DetailedValue(0)
+    for v, desc in (self.get_faction_soc(key) + self.get_se_soc(key)):
+      val.add(v, desc)
+    return val 
+
+  def turn(self):
+    for base in self.bases:
+      base.turn()
+
   def __repr__(self):
     return self.key
     
@@ -192,15 +293,28 @@ class GameRoot():
   def new(self):
     self.state = GameState() 
 
+  def turn(self):
+    #multi 
+    self.state.end_turn()
+
 faction_keys = ['gaians', 'hive', 'univ', 'morgan', 'spartans', 'believe', 'peace']
 
 class GameState():
   def __init__(self):
+    self.rules = rules.Rules(faction_keys)
     self.map = Map(20, 20)
-    self.factions = [Faction(k) for k in faction_keys]
-    self.curfaction = 0
-    self.phase = 'move'
+    self.factions = [Faction(self, k) for k in faction_keys]
+    self.fact_num = 0
+    self.faction = self.factions[self.fact_num]
+    #self.phase = 'move'
     self.year = 2100
+  def end_turn(self):
+    self.fact_num += 1
+    if self.fact_num == len(self.factions):
+      self.year += 1
+      self.fact_num = 0
+    self.faction = self.factions[self.fact_num]
+    self.faction.turn() 
 
 class Map():
   def __init__(self, w, h):
@@ -250,9 +364,12 @@ class Map():
       x, y = self.random()
       self.squares[y][x].bonus = random.choice(['nutrient', 'mineral', 'energy'])
 
+    '''
     for f in faction_keys:
       x, y = self.random()
-      self.squares[y][x].base = Base(self, f, "Base %d,%d" % (x, y))
+      base = Base(self, f, "Base %d,%d" % (x, y))
+      self.squares[y][x].base = base
+    '''
 
     for y in range(h):
       for x in range(w):
@@ -296,7 +413,8 @@ class Map():
         except AttributeError:
           print " "*wd,
       print
-
+  
+  #these should get renamed 
   def mapcoords(self, x, y):
     if y >= 0 and y < self.h: 
       return (x % self.w), y
@@ -314,6 +432,15 @@ class Map():
     else:
       return None
 
+  def tsquare(self, (x, y)):
+    return self.msquares(x, y)
+
+  def tmcoor(self, (x, y)):
+    return self.mapcoords(x, y)
+
+  def mcoor_lst(self, origin, lst):
+    x, y = origin
+    return [self.mapcoords(x + ex, y + ey) for ex, ey in lst if self.mapcoords(x + ex, y + ey)]
 
 class MapWidget(Widget):
   expand = 1, 1
@@ -440,24 +567,30 @@ class MapWidget(Widget):
               base = square.base 
               size = min(base.pop / 3, 3)
               if lev > 0:
-                self.blit(images2[base.faction]['base'][size](m), (l, b - 2.75*m))  
+                self.blit(images2[base.faction.key]['base'][size](m), (l, b - 2.75*m))  
               else:
-                self.blit(images2[base.faction]['wbase'][size](m), (l, b - 2.75*m))  
+                self.blit(images2[base.faction.key]['wbase'][size](m), (l, b - 2.75*m))  
+              self.renderer.font_render(base.name, white, (l, t)) 
 
             if ex == 2 and ey == 2:
               pass
               #self.renderer.surface.blit(images2['farm1'](m), (l, b - 2*m))  
-            
-            nuts = square.nutrient.val
-            mins = square.mineral.val
-            eng = square.energy.val
-            if nuts:
-              self.blit(images2['inutrient'][min(nuts, 8)], (l, t))
-            if mins:
-              self.blit(images2['imineral'][min(mins, 8)], (l+m, t))
-            if eng:
-              self.blit(images2['ienergy'][min(eng, 8)], (l+2*m, t))
-
+           
+            if self.fbase:
+              if self.map.tmcoor((ex, ey)) in self.fbase.worked_squares + [self.fbase.pos]:
+                square = self.map.msquares(ex, ey)
+                nuts = square.nutrient(self.fbase).val
+                mins = square.mineral(self.fbase).val
+                eng = square.energy(self.fbase).val
+                if nuts:
+                  self.blit(images2['inutrient'][min(nuts, 8)], (l, t))
+                if mins:
+                  self.blit(images2['imineral'][min(mins, 8)], (l+m, t))
+                if eng:
+                  self.blit(images2['ienergy'][min(eng, 8)], (l+2*m, t))
+                if nuts == 0 and mins == 0 and eng == 0:
+                  self.blit(images2['inone'], (l+m, t))
+              
 
           #if self.focus == (x, y):
     self.renderer.set_clip(clip)
@@ -474,15 +607,22 @@ class MapWidget(Widget):
     k = (mx + my*2 + 2*m)/(4*m)
     l = (mx - my*2 + 2*m)/(4*m) 
     x, y = k+l, k-l
-    if self.map.msquares(x + self.ox, y + self.oy):
-      self.focus = x, y
-      self.fcoords = self.map.mapcoords(x + self.ox, y + self.oy)
-      self.fsquare = self.map.msquares(x + self.ox, y + self.oy)
-      if self.fsquare.base:
-        self.fbase = self.fsquare.base
-      self.fnutrient = self.fsquare.nutrient.detail
-      self.fmineral = self.fsquare.mineral.detail
-      self.fenergy = self.fsquare.energy.detail
+    ex, ey = x + self.ox, y + self.oy
+    ex, ey = self.map.tmcoor((ex, ey))
+    if self.map.msquares(ex, ey):
+      if self.fbase and (ex, ey) in self.map.mcoor_lst(self.fbase.pos, base_coverage) and not self.map.tsquare((ex, ey)).base: 
+          self.fbase.toggle_worker((ex, ey))
+      else:
+        self.focus = x, y
+        self.fcoords = self.map.mapcoords(x + self.ox, y + self.oy)
+        self.fsquare = self.map.msquares(x + self.ox, y + self.oy)
+        if self.fsquare.base:# and not self.fbase: 
+          self.fbase = self.fsquare.base
+        else:
+          self.fbase = None
+      self.fnutrient = self.fsquare.nutrient().detail
+      self.fmineral = self.fsquare.mineral().detail
+      self.fenergy = self.fsquare.energy().detail
     #else:
     #  self.focus = None
     #  self.fcoords = None
@@ -508,6 +648,9 @@ class SaveLabel(Label):
   def on_mousebutton(self, event): root.save()
 class NewLabel(Label):
   def on_mousebutton(self, event): root.new()
+class TurnLabel(Label):
+  def on_mousebutton(self, event): root.turn()
+
 
 def mglue(): return Glue(setsize = (10, 0), expand = (0, 0)) 
 
@@ -515,6 +658,7 @@ menu = HB([
   LoadLabel(text = 'Load', color = blue1), mglue(), 
   SaveLabel(text = 'Save', color = blue1), mglue(), 
   NewLabel(text = 'New', color = blue1), mglue(), 
+  TurnLabel(text = 'End Turn', color = blue1), mglue(), 
   ])
 
 
