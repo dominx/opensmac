@@ -151,10 +151,6 @@ class Square():
       #econo
     return eng
 
-class Node():
-  def __init__(self, elev):
-    self.elev = elev
-
 base_coverage = [
    (-3, -1), (-2, -2), (-1, -3),
    (-3, 1), (-2, 0), (-1, -1), (0, -2), (1, -3),
@@ -340,6 +336,10 @@ class GameState():
       self.fact_num = 0
     self.faction = self.factions[self.fact_num]
     self.faction.turn() 
+
+class Node():
+  def __init__(self, elev):
+    self.elev = elev
 
 class Map():
   def __init__(self, w, h):
@@ -638,7 +638,6 @@ class MapWidget(Widget):
               self.renderer.font_render(base.name, images2[base.faction.key]['textcolor0'], (l+2*m-w/2, t+(m*1.8))) 
               backcolor = images2[base.faction.key]['color0']
               color = black
-              print backcolor
               if backcolor == black: color = white #sparta kludge
               self.renderer.font_render(str(base.pop), color, (l, t-m), background = backcolor, bold = True) 
     

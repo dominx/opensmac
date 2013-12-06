@@ -37,7 +37,6 @@ class FactionRules():
     #basenames 
     lines = data['bases']
     self.basenames = copy.copy(lines)
-    self.basenames.reverse()
     
 
 class Rules():
