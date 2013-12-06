@@ -27,7 +27,7 @@ class FactionRules():
     rspec = split_strip(lines[1])
     special = zip(rspec[::2], rspec[1::2])
     #print [(k, v) for k, v in special if k != 'SOCIAL' and k != 'TECH']
-    print [(k, v) for k, v in special]
+    #print [(k, v) for k, v in special]
     self.social = [] 
     for name, val in special:
       if name == 'SOCIAL':
@@ -37,7 +37,7 @@ class FactionRules():
     #basenames 
     lines = data['bases']
     self.basenames = copy.copy(lines)
-    
+    self.basenames.reverse() 
 
 class Rules():
   def __init__(self, faction_keys):
