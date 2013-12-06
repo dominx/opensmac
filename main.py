@@ -252,11 +252,18 @@ class Faction():
     self.models['values'] = 'survival'
     self.models['future'] = 'none'
 
+    self.basenames = copy.copy(self.state.rules.factions[self.key].basenames)
+
     self.new_base()
 
   def new_base(self):
     x, y = self.state.map.random()
-    base = Base(self.state.map, self, (x, y), "Base %d,%d" % (x, y))
+    #base = Base(self.state.map, self, (x, y), "Base %d,%d" % (x, y))
+    try:
+      basename = self.basenames.pop()
+    except IndexError: 
+      basename = "Base %d" % len(self.bases)
+    base = Base(self.state.map, self, (x, y), basename)
     self.state.map.squares[y][x].base = base
     self.bases.append(base)
 
@@ -629,7 +636,11 @@ class MapWidget(Widget):
               w, h = self.renderer.font_size(base.name)
               self.renderer.font_render(base.name, images2[base.faction.key]['textcolor1'], (l+1+2*m-w/2, t+1+(m*1.8))) 
               self.renderer.font_render(base.name, images2[base.faction.key]['textcolor0'], (l+2*m-w/2, t+(m*1.8))) 
-              self.renderer.font_render(str(base.pop), black, (l, t-m), background = images2[base.faction.key]['color0'], bold = True) 
+              backcolor = images2[base.faction.key]['color0']
+              color = black
+              print backcolor
+              if backcolor == black: color = white #sparta kludge
+              self.renderer.font_render(str(base.pop), color, (l, t-m), background = backcolor, bold = True) 
     
     self.renderer.set_clip(clip)
 

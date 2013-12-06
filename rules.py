@@ -1,4 +1,5 @@
 import txt
+import copy
 
 class Technology():
   def __init__(self, name, key, values, preq1, preq2, flags):
@@ -21,6 +22,7 @@ def parse_soc(st):
 
 class FactionRules():
   def __init__(self, fkey, data):
+    #specials
     lines = data[fkey]
     rspec = split_strip(lines[1])
     special = zip(rspec[::2], rspec[1::2])
@@ -32,6 +34,11 @@ class FactionRules():
         self.social.append(parse_soc(val))
       if name == 'TECH' :
         pass 
+    #basenames 
+    lines = data['bases']
+    self.basenames = copy.copy(lines)
+    self.basenames.reverse()
+    
 
 class Rules():
   def __init__(self, faction_keys):
