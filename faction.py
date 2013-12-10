@@ -1,5 +1,6 @@
 import copy
 from base import Base
+from square import DetailedValue
 
 class Faction():
   def __init__(self, state, key):
