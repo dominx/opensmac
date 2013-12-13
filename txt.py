@@ -1,6 +1,3 @@
-
-
-
 import os
 
 txt_dir = 'txt'
@@ -8,7 +5,7 @@ txt_dir = 'txt'
 def filenames(dir):
   for dirname, dirnames, filenames in os.walk(dir):
     if dirname == dir:
-      filenames = [name for name in filenames if name.split('.')[1] == 'txt']
+      filenames = [name for name in filenames if len(name.split('.')) > 1 and name.split('.')[1] == 'txt']
       return zip([os.path.join(dirname, filename) for filename in filenames], filenames)
 
 def cleanlines(lines):

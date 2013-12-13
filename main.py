@@ -279,7 +279,15 @@ def HDGFrame(chl, label):
   ])
   return OPRFrame(child = vbox, fwidth = 3, color = green2)
 
-
+class CitizenView(HBox):
+  def do(self, events):
+    base = getattr(self.ref, self.attr)
+    if base:
+      workers = base.pop - base.specs - base.drones - base.superdrones - base.talents 
+      lst = ['mtalent'] * base.talents + ['mworker'] * workers + ['mdrone'] * base.drones \
+        + ['msuperdrone'] * base.superdrones + ['doctor'] * base.specs
+      self.children = [Image(image = img.images[citizen]) for citizen in lst] 
+      self.set_all(renderer = self.renderer)
 
 class LoadLabel(Label): 
   def on_mousebutton(self, event): root.load()
@@ -311,7 +319,10 @@ baseview = Frame(fwidth = 2, child = HDGFrame(ObjView(ref = mapwidget, attr = 'f
 nutview = Frame(fwidth = 2, child = HDGFrame(ListView(ref = mapwidget, attr = 'fnutrient', color = green1, color2 = green2), 'NUTRIENT'))
 minview = Frame(fwidth = 2, child = HDGFrame(ListView(ref = mapwidget, attr = 'fmineral', color = green1, color2 = green2), 'MINERAL'))
 engview = Frame(fwidth = 2, child = HDGFrame(ListView(ref = mapwidget, attr = 'fenergy', color = green1, color2 = green2), 'ENERGY'))
+citizenview = Frame(fwidth = 2, child = DGFrame(CitizenView(ref = mapwidget,  attr = 'fbase')))
 
-panel = HB([rootview, sqview, baseview, nutview, minview, engview])
+panel2 = VB([nutview, minview, engview])
+panel = HB([rootview, sqview, baseview, citizenview, panel2])
+#panel = HB([rootview, sqview, baseview])
 widgets = VB([menu, fmap, panel])
 loop.main(widgets, img.init)

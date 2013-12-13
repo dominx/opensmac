@@ -161,6 +161,11 @@ def init():
     'imineral' : { n :pic(newicons, (174 + (n-1)*41, 345, 40, 40)) for n in range(1, 9)},
     'ienergy' : { n :pic(newicons, (174 + (n-1)*41, 386, 40, 40)) for n in range(1, 9)},
     'inone': pic(newicons, (1, 174, 22, 22)),
+    'mtalent' : pic(newicons, (44, 458, 30, 38)),
+    'mworker' : pic(newicons, (137, 458, 30, 38)),
+    'mdrone' : pic(newicons, (199, 458, 30, 38)),
+    'msuperdrone' : pic(newicons, (261, 458, 30, 38)),
+    'doctor' : pic(newicons, (323, 458, 30, 38)),
   }
   images.update(faction_images)
 

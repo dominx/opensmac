@@ -104,6 +104,14 @@ class Label(Widget):
     else:
       self.renderer.font_render(self.text, self.color, self.pos, self.size, bold = self.bold)
 
+class Image(Widget):
+  def init(self):
+    self.expand = 0, 0
+  def get_size(self):
+    return self.image.get_size(), (0, 0), (0, 0)
+  def draw(self):
+    self.renderer.surface.blit(self.image, self.pos)
+
 class Glue(Widget):
   def init(self):
     self.setsize = 0, 0
@@ -242,7 +250,7 @@ class HBox(MultiParent):
     childshrinks = [shrink for size, expand, shrink in self.childgeo]
     self.size = sum([w for w, h in childsizes]+[0]), max([h for w, h in childsizes]+[0])
     self.childexp = sum([w for w, h in childexps]+[0]), max([h for w, h in childexps]+[0])
-    self.childshrink = sum([w for w, h in childshrinks]+[0]), max([h for w, h in childshrinks])
+    self.childshrink = sum([w for w, h in childshrinks]+[0]), max([h for w, h in childshrinks]+[0])
     #print 'hbox', self.size, self.childexp, self.childshrink
     #print childexps
     return self.size, self.childexp, self.childshrink
@@ -274,7 +282,8 @@ class HBox(MultiParent):
       ox += cw
 
 class Box(MultiParent):
-  expand = 1, 1
+  def init(self):
+    self.expand = 1, 1
   def get_size(self):
     self.childgeo = [child.get_size() for child in self.children]
     return self.size, self.expand, self.shrink
