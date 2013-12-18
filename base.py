@@ -136,7 +136,7 @@ class Base():
     else:
       #stockpile
       self.faction.energy += self.mins / 2
-      self.m!ins = 0
+      self.mins = 0
 
     #growth
     if self.famine: 
