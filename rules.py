@@ -11,6 +11,17 @@ class Technology():
     self.flags = flags
     self.might = sum([int(v) for v in values])
 
+class Facility():
+  def __init__(self, name, key, cost, maint, preq, free_maint, effects, global_effects):
+    self.name = name
+    self.key = key
+    self.cost = cost
+    self.maint = maint
+    self.preq = preq
+    self.free_maint = free_maint
+    self.effects = effects
+    self.global_effects = global_effects
+
 def split_strip(line):
   return [f.strip() for f in line.split(',')]
 
@@ -44,7 +55,7 @@ class Rules():
     #technology
     self.tech = {}
     for line in txt.data.alphax.technology:
-      d = line.split(',')
+      d = split_strip(line)
       self.tech[d[1]] = Technology(d[0], d[1], (d[2], d[3], d[4], d[5]), d[6], d[7], d[8])
 
     #SOCIO
@@ -59,3 +70,20 @@ class Rules():
     self.factions = {}
     for fkey in faction_keys:
       self.factions[fkey] = FactionRules(fkey, txt.data2[fkey])
+    
+    #facilites & SPs
+    self.fac = {}
+    for aline, cline in zip(txt.data.alphax.facilities, txt.data.compat.facilities):
+      a = split_strip(aline)
+      c = split_strip(cline)
+      key = c[1]
+      effects = c[2:]
+      try:
+        i = effects.index('global')
+        locs = effects[:i]
+        globs = effects[i+1:]
+      except ValueError:
+        locs = effects
+        globs = []
+      self.fac[key] = Facility(a[0], key, a[1], a[2], a[3], a[4], locs, globs)
+      print a[0], key, a[1], a[2], a[3], a[4], locs, globs

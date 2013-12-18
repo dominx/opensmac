@@ -1,0 +1,144 @@
+; opensmac alphax compatibility file
+; for things that are not hard coded in opensmac
+;
+; facilities effects
+; name, key, effects
+; name is not used by opensmac and are for readablity. facilities are indentified by line number  
+; key is id used by smac internally
+; effects are list of effects that facility provides, effects before 'global' keyword are base local, thouse after are faction-wide,
+; global at the and does nothing
+;
+#FACILITIES
+Headquarters,                  HQ,       mc_immune, base_eng, effic_hq
+Children's Creche,             Creche,   growth 2, effic, creche_morale
+Recycling Tanks,               RecTanks, base_nut, base_min, base_eng
+Perimeter Defense,             PerDef,   land_def
+Tachyon Field,                 TachFld,  all_def, preq PerDef
+Recreation Commons,            RecComm,  undrone 2
+Energy Bank,                   EngBank,  econ
+Network Node,                  NetNode,  labs, artifact
+Biology Lab,                   BioLab,   rp 2, lifecycle 
+Skunkworks,                    SkunkWrk, free_proto, no_switch_penalty
+Hologram Theatre,              HoloTh,   psych, undrone 2
+Paradise Garden,               PGarden,  talent 2
+Tree Farm,                     TreeFarm, econ, psych, terr_eco, forest_nut, global, eco
+Hybrid Forest,                 HForest,  econ, psych, terr_eco, forest_nut, forest_eng, preq TreeFarm, global, eco
+Fusion Lab,                    FusLab,   econ, labs
+Quantum Lab,                   QuantLab, econ, labs
+Research Hospital,             ResHosp,  labs, psych25, undrone 1
+Nanohospital,                  Nanohosp, labs, psych
+Robotic Assembly Plant,        RAPlant,  mins
+Nanoreplicator,                Nanorep,  mins, global, eco
+Quantum Converter,             QuantCon, mins
+Genejack Factory,              Genejack, mins, drone, mc_vuln
+Punishment Sphere,             PunSphr,  nodrone, notalent, halftech
+Hab Complex,                   HabComp,  pop_limit_low
+Habitation Dome,               HabDome,  pop_limit_high, preq HabComp
+Pressure Dome,                 PresDome, submersion, fac RecTanks
+Command Center,                CommandC, morale_land, repair_land, upkeep_react
+Naval Yard,                    NavYard,  morale_sea, sea_def, repair_sea
+Aerospace Complex,             AeroComp, morale_air, air_def, repair_air, prev_airdrop, build_sat, benefit_sat
+Bioenhancement Center,         BioEnhC,  morale_all, lifecycle
+Centauri Preserve,             CentPres, lifecycle, global, eco
+Temple of Planet,              Temple,   global, eco
+Psi Gate,                      PsiGate,  teleport
+Covert Ops Center,             CovOpsC,  morale_probe, probe 2
+Brood Pit,                     BroodPit, police 2, lifecycle, lifecycle_immunity, alien_cheaper 
+Aquafarm,                      Aquafarm, sea_nut
+Subsea Trunkline,              SubTrunk, sea_min
+Thermocline Transducer,        TherTran, sea_eng
+Flechette Defense System,      FDS,      miss_def
+Subspace Generator,            SubGen,   alien_victory
+Geosynchronous Survey Pod,     GSPod,    sight, sensor
+Empty Facility 42,             Disable
+Empty Facility 43,             Disable
+Empty Facility 44,             Disable
+Empty Facility 45,             Disable
+Empty Facility 46,             Disable
+Empty Facility 47,             Disable
+Empty Facility 48,             Disable
+Empty Facility 49,             Disable
+Empty Facility 50,             Disable
+Empty Facility 51,             Disable
+Empty Facility 52,             Disable
+Empty Facility 53,             Disable
+Empty Facility 54,             Disable
+Empty Facility 55,             Disable
+Empty Facility 56,             Disable
+Empty Facility 57,             Disable
+Empty Facility 58,             Disable
+Empty Facility 59,             Disable
+Empty Facility 60,             Disable
+Empty Facility 61,             Disable
+Empty Facility 62,             Disable
+Empty Facility 63,             Disable
+Empty Facility 64,             Disable
+Sky Hydroponics Lab,           HydrLab,  global, sat_nurient
+Nessus Mining Station,         MineStat, sat_mineral
+Orbital Power Transmitter,     PowTrans, sat_energy
+Orbital Defense Pod,           DefPod,   sat_def
+Stockpile Energy,              stockpile
+The Human Genome Project,      HumGenProj,   global, talent 1
+The Command Nexus,             CommNexus,    global, fac CommandC
+The Weather Paradigm,          WeatherPar,   global, terraform_rate, lower_raise, condensor, borehole
+The Merchant Exchange,         MerchExch,    all_energy
+The Empath Guild,              EmpathGuild,  global, all_commlinks, all_infiltration, votes 50
+The Citizens' Defense Force,   CitDefForce,  global, fac PerDef
+The Virtual World,             VirtWorld,    counts_as NetNode HoloTh
+The Planetary Transit System,  PlTransSys,   global, base_start_pop 3, undrone_pop 3
+The Xenoempathy Dome,          XenoDome,     global, lifecycle, fungus_as_roads, fungus_plant_rate
+The Neural Amplifier,          NeuralAmp,    global, psi_def
+The Maritime Control Center,   MaritimeCC,   global, fac NavYard, sea_move 2 
+The Planetary Datalinks,       PDatalinks,   global, share_tech 3
+The Supercollider,             Supercoll,    labs 2
+The Ascetic Virtues,           AsceticVirt,  global, pop_limit 2, police
+The Longevity Vaccine,         LongVaccine,  longevity_vaccine ;arrgh
+The Hunter-Seeker Algorithm,   HSAlgorithm,  global, probe_immune
+The Pholus Mutagen,            PholusMut,    global, lifecycle, fungus_native_def, eco
+The Cyborg Factory,            CyborgFac,    global, fac BioEnhC
+The Theory of Everything,      TOE,          labs 2
+The Dream Twister,             DreamTwist,   global, psi_attack
+The Universal Translator,      UnivTrans,    global, free_tech 2
+The Network Backbone,          NetBackbone,  global, immunity cybernetic, lab_per_commerce, lab_per_fac NetNode
+The Nano Factory,              NanoFactory,  global, field_repair, upgrade_half_cost
+The Living Refinery,           LivingRefin,  global, support 2
+The Cloning Vats,              CloningVats,  global, pop_boom, immunity power, immunity thought_control
+The Self-Aware Colony,         SAColony,     global, maintenance_halved, extra_police_unit
+Clinical Immortality,          ClinImmort,   global, talent 1
+The Space Elevator,            SpaceElev,    econ 2, global, benefit_sat, sat_half_cost, orbital_insertion  ; econ or something else?
+The Singularity Inductor,      SingInduct,   global, fac QuantCon
+The Bulk Matter Transmitter,   BMatTrans,    global, mins
+The Telepathic Matrix,         TeleMatrix,   global, no_riots, probe 2
+The Voice of Planet,           Voice,        global, voice
+The Ascent to Transcendence,   Ascent,       global, ascent
+The Manifold Harmonics,        ManiHarm,     manifold_harmonics ; arrgh
+The Nethack Terminus,          NethackTerm,  probe_morale 1, probe_actions_cheap, fusion_as_algenh
+The Cloudbase Academy,         CloudAcadem,  global, fac AeroComp, air_move 2
+The Planetary Energy Grid,     PEnergyGrid,  global, fac EngBank
+Empty Secret Project 38,      Disable
+Empty Secret Project 39,      Disable
+Empty Secret Project 40,      Disable
+Empty Secret Project 41,      Disable
+Empty Secret Project 42,      Disable
+Empty Secret Project 43,      Disable
+Empty Secret Project 44,      Disable
+Empty Secret Project 45,      Disable
+Empty Secret Project 46,      Disable
+Empty Secret Project 47,      Disable
+Empty Secret Project 48,      Disable
+Empty Secret Project 49,      Disable
+Empty Secret Project 50,      Disable
+Empty Secret Project 51,      Disable
+Empty Secret Project 52,      Disable
+Empty Secret Project 53,      Disable
+Empty Secret Project 54,      Disable
+Empty Secret Project 55,      Disable
+Empty Secret Project 56,      Disable
+Empty Secret Project 57,      Disable
+Empty Secret Project 58,      Disable
+Empty Secret Project 59,      Disable
+Empty Secret Project 60,      Disable
+Empty Secret Project 61,      Disable
+Empty Secret Project 62,      Disable
+Empty Secret Project 63,      Disable
+Empty Secret Project 64,      Disable

@@ -40,6 +40,8 @@ def shfileparse(lines):
             pass
       else: 
         items.append(line)
+    if key:
+      sections.append((key, items))
     return sections
 
 class SugarDict:
@@ -61,6 +63,8 @@ parsedfiles = [(f, SugarDict(shfileparse(lines))) for f, lines in rawfiles]
 data = SugarDict(parsedfiles)
 
 data2 = { f : dict(shfileparse(lines)) for f, lines in rawfiles}
+
+#print data2['compat']
 
 #for i in data.alphax.citizens:
 #  print i
