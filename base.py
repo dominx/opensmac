@@ -15,20 +15,16 @@ class Base():
     self.pop = 1#random.randint(1, 12)
     self.nuts = 0
     self.mins = 0
+    self.queue = []
     self.facs = []
     self.worked_squares = []
     self.specs = self.pop
     self.drones = 0
     self.superdrones = 0
+    self.riot = False
     self.calc_happyness()
     #self.autoplace_workers
     
-
-  def growth(self):
-    gr = self.faction.growth.copy()
-    #creche, golden age; vats?
-    return gr
-
   def die(self):
     pass 
 
@@ -52,6 +48,7 @@ class Base():
         elif superdrones:
           superdrones -= 1
         val -= 1
+
     all_workers = self.pop - self.specs
     talents = 0 #+lal
     drones = max(0, all_workers - 1) # +zak, bureau, diff
@@ -73,46 +70,109 @@ class Base():
     self.talents = talents
     self.superdrones = superdrones
     return drones + superdrones > talents
-      
-  def turn(self):
+
+  def nutrient(self):
     squares = [self.map.tsquare(pos) for pos in (self.worked_squares + [self.pos])]
     nuts = sum([sq.nutrient(self).val for sq in squares])
-    self.nuts += nuts - 2*self.pop
+    return nuts
+
+  def mineral(self):
+    squares = [self.map.tsquare(pos) for pos in (self.worked_squares + [self.pos])]
+    mins = sum([sq.mineral(self).val for sq in squares])
+    #bonus effects
+    return mins
+ 
+  def energy(self):
+    squares = [self.map.tsquare(pos) for pos in (self.worked_squares + [self.pos])]
+    eng = sum([sq.energy(self).val for sq in squares])
+    #ineffficeincy??
+    #eng -= eng * (hqdist / 8(4 - effic))
+    return eng
+
+  def society(self, key):
+    soc = self.faction.society(key).copy()
+    #base soc effects
+    return soc
+
+  def psych(self):
+    psych = (self.energy() * self.faction.psych)/100
+    psych += 2 * self.specs
+    # % bonus
+    return psych 
+
+  def econ(self):
+    econ = (self.energy() * self.faction.econ)/100
+    #specs
+    # % fac bonus
+    return econ 
+
+  def labs(self):
+    labs = (self.energy() * self.faction.labs)/100
+    #specs
+    # % fac bonus
+    return labs
+
+  def turn(self):
+    #famine check
+    dnuts = self.nutrient() - 2*self.pop
+    print self.nuts, dnuts
+    self.nuts += dnuts 
     if self.nuts < 0:
       self.nuts = 0
+      self.famine = True
+    else:
+      self.famine = False
+
+    #build
+    dmin = self.mineral()
+    # if dmin < 0: short support
+    self.mins += dmin
+    if self.queue:
+      if self.mins >= self.queue[0].cost:
+        if not self.famine and not self.riot:
+          self.mins -= self.queue[0].cost
+          obj = self.queue.pop(0)
+          self.build(obj)
+    else:
+      #stockpile
+      self.faction.energy += self.mins / 2
+      self.m!ins = 0
+
+    #growth
+    if self.famine: 
       self.pop -= 1
       if self.pop == 0:
         self.die()
-      #hunger 
-    growth = self.faction.society('growth')
-    #pop boom
-    grow_thres = (self.pop + 1) * (10 - min(growth.val, 5))
-    if self.nuts >= grow_thres:
-      self.nuts -= grow_thres
-      self.pop += 1 
-      self.specs += 1
-      #self.autoplace_workers
-    riot = self.calc_happyness()
+    else:
+      growth = self.society('growth')
+      grow_thres = (self.pop + 1) * (10 - min(growth.val, 5))
+      if growth.val >= 6 and self.dnuts >= 2:
+        #popboom
+        self.pop += 1
+        self.specs += 1
+        #self.autoplace_workers
+      else:
+        #normal growth
+        if self.nuts > grow_thres:
+          self.nuts -= grow_thres
+          self.pop += 1 
+          self.specs += 1
+          #self.autoplace_workers
+
+    #energy
+    #self.faction.add_labs(self.labs())
+    #self.faction.energy += self.energy() - self.maintenance()
+    #todo short maintenance
+
+    #drone
+    self.riot = self.calc_happyness()
     #autoplace new workers
 
-    mins = sum([sq.mineral(self).val for sq in squares])
-    eng = sum([sq.energy(self).val for sq in squares])
-    psych = (eng * self.faction.psych)/100
-    econ = (eng * self.faction.econ)/100
-    labs = (eng * self.faction.labs)/100
-    self.d = nuts, mins, eng
-    self.ea = psych, econ, labs
-    self.eb = 2 * self.specs
+    #self.d = nuts, mins, eng
+    #self.ea = psych, econ, labs
+    #self.eb = 2 * self.specs
  
-  def psych(self):
-    squares = [self.map.tsquare(pos) for pos in (self.worked_squares + [self.pos])]
-    eng = sum([sq.energy(self).val for sq in squares])
-    #efficiency
-    psych = (eng * self.faction.psych)/100
-    # % bonus
-    psych += 2 * self.specs
-    return psych 
- 
+
   def toggle_worker(self, pos):
     if pos in self.map.mcoor_lst(self.pos, base_coverage) and pos != self.pos:
       square = self.map.tsquare(pos)

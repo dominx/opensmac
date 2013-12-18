@@ -1,3 +1,4 @@
+import copy
 
 class DetailedValue():
   def __init__(self, val = 0, desc = ''):
