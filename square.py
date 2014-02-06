@@ -1,23 +1,5 @@
-import copy
 
-class DetailedValue():
-  def __init__(self, val = 0, desc = ''):
-    self.val = val
-    self.detail = [(val, desc)]
-  def add(self, n, desc):
-    self.val += n
-    self.detail.append((self.val, desc + (" %+d" % n)))
-  def imul(self, n, desc):
-    self.val = int(self.val * n)
-    self.detail.append((self.val, desc + (" *%.1f" % n)))
-  def cap(self, n, desc):
-    self.val = min(self.val, n)
-    self.detail.append((self.val, desc + (" <=%d" % n)))
-  def lcap(self, n, desc):
-    self.val = max(self.val, n)
-    self.detail.append((self.val, desc + (" >=%d" % n)))
-  def copy(self):
-    return copy.copy(self)
+from detailed import DetailedInt
 
 class Square():
   def __init__(self, pos):
@@ -39,9 +21,12 @@ class Square():
   # add_improv, rem_improv
   def nutrient(self, base = None, faction = None):
     if base: faction = base.faction
-    nuts = DetailedValue(0)
+    nuts = DetailedInt()
     if self.base:
-      nuts.add(2, 'base square')
+      #todo reference rules
+      #nuts.add(2, 'base square')
+      nuts += 2, 'base square'
+      nuts += self.base.effect('base_nut')
     else:
       if self.bonus == 'nutrient':
         nuts.add(2, 'bonus')
@@ -60,9 +45,9 @@ class Square():
           if self.improv == 'condenser':
             nuts.imul(1.5, 'condenser')
         if self.improv == 'mine':
-          #if nuts.val > 0:
-          nuts.add(-1, 'mine')
-          nuts.lcap(0, '')
+          if nuts.val > 0:
+            nuts.add(-1, 'mine')
+          #nuts.lcap(0, '')
         if self.improv == 'borehole':
           nuts.cap(0, 'borehole')
         #todo restrict
@@ -76,9 +61,10 @@ class Square():
 
   def mineral(self, base = None, faction = None):
     if base: faction = base.faction
-    mins = DetailedValue(0)
+    mins = DetailedInt()
     if self.base:
       mins.add(1, 'base square')
+      #nuts.add(self.base.effect('base_nut').val, self.base.effect('base_nut').desc)
     else:
       if self.bonus == 'mineral':
         mins.add(2, 'bonus')
@@ -114,7 +100,7 @@ class Square():
 
   def energy(self, base = None, faction = None):
     if base: faction = base.faction
-    eng = DetailedValue(0)
+    eng = DetailedInt(0)
     if self.base:
       eng.add(1, 'base square')
       #econo

@@ -1,6 +1,6 @@
 import copy
 from base import Base
-from square import DetailedValue
+from square import DetailedInt
 
 class Faction():
   def __init__(self, state, key):
@@ -14,10 +14,10 @@ class Faction():
     self.psych = 30
     self.labs = 30
 
-    self.politics = 'frontier'
-    self.economics = 'simple'
-    self.values = 'survival'
-    self.future = 'none'
+    #self.politics = 'frontier'
+    #self.economics = 'simple'
+    #self.values = 'survival'
+    #self.future = 'none'
 
     self.models = {}
     self.models['politics'] = 'frontier'
@@ -57,10 +57,19 @@ class Faction():
     return ret
 
   def society(self, key):
-    val = DetailedValue(0)
+    val = DetailedInt(0)
     for v, desc in (self.get_faction_soc(key) + self.get_se_soc(key)):
+      #todo immunity impunity robust
       val.add(v, desc)
     return val 
+
+  def global_effects(self):
+    globs = []
+    for base in self.bases:
+      globs += base.global_effects()
+    #faction effects
+    #tech effects
+    return globs
 
   def turn(self):
     for base in self.bases:

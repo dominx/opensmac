@@ -1,4 +1,6 @@
 
+from detailed import DetailedInt
+
 base_coverage = [
    (-3, -1), (-2, -2), (-1, -3),
    (-3, 1), (-2, 0), (-1, -1), (0, -2), (1, -3),
@@ -22,6 +24,7 @@ class Base():
     self.drones = 0
     self.superdrones = 0
     self.riot = False
+    self.calc_effects()
     self.calc_happyness()
     #self.autoplace_workers
     
@@ -58,14 +61,23 @@ class Base():
       drones = all_workers - superdrones
     
     talents, drones, superdrones = reduce(talents, drones, superdrones)
-    talents += self.psych()/2
+    talents += int(self.psych()/2)
     talents, drones, superdrones = reduce(talents, drones, superdrones)
-    #facs
+    drones -= self.effect('undrone').val
+    drones += self.effect('drone').val
+    talents += self.effect('talent').val
     talents, drones, superdrones = reduce(talents, drones, superdrones)
     #police
     talents, drones, superdrones = reduce(talents, drones, superdrones)
     #sp
+    drones -= self.effect('undrone_sp').val
+    drones += self.effect('drone_sp').val
+    talents += self.effect('talent_sp').val
     talents, drones, superdrones = reduce(talents, drones, superdrones)
+    if self.effect('nodrone').val:
+      drones = 0
+    if self.effect('notalent').val:
+      talents = 0
     self.drones = drones
     self.talents = talents
     self.superdrones = superdrones
@@ -80,6 +92,7 @@ class Base():
     squares = [self.map.tsquare(pos) for pos in (self.worked_squares + [self.pos])]
     mins = sum([sq.mineral(self).val for sq in squares])
     #bonus effects
+    mins += mins * self.effect('mins').val
     return mins
  
   def energy(self):
@@ -92,25 +105,73 @@ class Base():
   def society(self, key):
     soc = self.faction.society(key).copy()
     #base soc effects
+    if self.effect(key):
+      soc += self.effect(key)
     return soc
 
   def psych(self):
     psych = (self.energy() * self.faction.psych)/100
     psych += 2 * self.specs
-    # % bonus
+    bonus = self.effect('psych')
+    if bonus:
+      psych += psych * 0.5 * bonus.val
+    bonus = self.effect('psych25')
+    if bonus:
+      psych += psych * 0.25 * bonus.val
     return psych 
 
   def econ(self):
     econ = (self.energy() * self.faction.econ)/100
     #specs
     # % fac bonus
+    bonus = self.effect('econ')
+    if bonus:
+      econ += econ * 0.5 * bonus.val
     return econ 
 
   def labs(self):
     labs = (self.energy() * self.faction.labs)/100
     #specs
-    # % fac bonus
+    bonus = self.effect('labs')
+    if bonus:
+      labs += labs * 0.5 * bonus.val
+    if self.effect('halftech'):
+      labs -= labs * 0.5
     return labs
+
+  def local_effects(self):
+    local = []
+    for fkey in self.facs:
+      local += [(eff, typ, val, fkey) for eff, val in self.faction.state.rules.facs[fac].effects]
+    return local     
+ 
+  def global_effects(self):
+    glob = []
+    for fkey in self.facs:
+      glob += [(eff, typ, val, (fkey, self.name)) for eff, val in self.faction.state.rules.facs[fac].global_effects]
+    return glob
+
+  def calc_effects(self):
+    raw_effects = self.local_effects() + self.faction.global_effects()
+    effects = {}
+    for eff, typ, val, source in raw_effects:
+      if typ == 'int': 
+        effects.setdefault(eff, DetailedInt(0)).add(val, source)
+      else:
+        effects.setdefault(eff, []).append((val, source)) 
+    self.effects = effects
+
+  def effect(self, eff, default = DetailedInt()):
+    try:
+      return self.effects[eff]
+    except KeyError:
+      return default
+
+  def buildable_facs(self):
+    facs = self.faction.state.rules.facs.values()
+    facs = [fac for fac in facs if fac.preq in self.faction.tech or fac.preq == 'None']
+    facs = [fac for fac in facs if fac.preq_fac and fac.preq_fac in self.facs]
+    return [fac for fac in facs if fac.key not in self.facs]      
 
   def turn(self):
     #famine check
@@ -140,24 +201,18 @@ class Base():
 
     #growth
     if self.famine: 
-      self.pop -= 1
-      if self.pop == 0:
-        self.die()
+      self.shrink()
     else:
       growth = self.society('growth')
       grow_thres = (self.pop + 1) * (10 - min(growth.val, 5))
       if growth.val >= 6 and self.dnuts >= 2:
         #popboom
-        self.pop += 1
-        self.specs += 1
-        #self.autoplace_workers
+        self.grow()
       else:
         #normal growth
         if self.nuts > grow_thres:
           self.nuts -= grow_thres
-          self.pop += 1 
-          self.specs += 1
-          #self.autoplace_workers
+          self.grow()
 
     #energy
     #self.faction.add_labs(self.labs())
@@ -168,10 +223,36 @@ class Base():
     self.riot = self.calc_happyness()
     #autoplace new workers
 
+    #debug
     #self.d = nuts, mins, eng
     #self.ea = psych, econ, labs
     #self.eb = 2 * self.specs
- 
+    self.bf = [fac.key for fac in self.buildable_facs()]   
+
+  def grow(self):
+    self.pop += 1
+    self.add_spec()
+    #self.autoplace_workers
+
+  def shrink(self):
+      self.pop -= 1
+      #remove worker or spec!
+      if self.specs:
+        self.rem_spec()
+      else:
+        self.rem_worker()
+      if self.pop == 0:
+        self.die()
+
+  def add_spec(self):
+    self.specs += 1
+
+  def rem_spec(self):
+    self.specs -= 1
+
+  def rem_worker(self):
+    pos = self.worked_squares.pop()
+    self.map.tsquare(pos).worked = False
 
   def toggle_worker(self, pos):
     if pos in self.map.mcoor_lst(self.pos, base_coverage) and pos != self.pos:
@@ -181,11 +262,11 @@ class Base():
           if self.specs > 0:
             self.worked_squares.append(pos)
             square.worked = True
-            self.specs -= 1
+            self.rem_spec()
             self.calc_happyness()
       else:
         self.worked_squares.remove(pos)
         square.worked = False
-        self.specs += 1
+        self.add_spec()
         self.calc_happyness()
  

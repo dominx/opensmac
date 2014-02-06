@@ -8,7 +8,7 @@ from widget import *
 import img
 import loop
 import rules
-from square import Square, DetailedValue
+from square import Square, DetailedInt
 from base import Base, base_coverage 
 from faction import Faction      
 from map import Map, Node
@@ -283,6 +283,7 @@ class CitizenView(HBox):
   def do(self, events):
     base = getattr(self.ref, self.attr)
     if base:
+      #print base.pop, base.specs, base.drones, base.superdrones, base.talents 
       workers = base.pop - base.specs - base.drones - base.superdrones - base.talents 
       lst = ['mtalent'] * base.talents + ['mworker'] * workers + ['mdrone'] * base.drones \
         + ['msuperdrone'] * base.superdrones + ['doctor'] * base.specs

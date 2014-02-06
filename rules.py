@@ -1,6 +1,9 @@
 import txt
 import copy
 
+def split_strip(line):
+  return [f.strip() for f in line.split(',')]
+
 class Technology():
   def __init__(self, name, key, values, preq1, preq2, flags):
     self.name = name
@@ -11,25 +14,48 @@ class Technology():
     self.flags = flags
     self.might = sum([int(v) for v in values])
 
+
 class Facility():
   def __init__(self, name, key, cost, maint, preq, free_maint, effects, global_effects):
+
+    def parse_effect(eff):
+      e = split_strip(eff)  
+      if e[0] == 'sp':
+        self.sp = True
+        return None
+      elif e[0] == 'preq':
+        self.preq_fac = e[1]
+        return None
+      elif len(e) == 1:
+        return e[0], 'int', 1 
+      elif len(e) == 2:
+        try:
+          return e[0], 'int', int(e[1])
+        except ValueError:
+          return e[0], 'str', e[1]
+      elif len(e) == 3:
+        try:
+          return e[0], 'int_pair', (int(e[1]), int(e[2]))
+        except ValueError:
+          return e[0], 'str_pair', (e[1], e[2])
+      print "At ", name ,"too many effect parameters:", e
+      return "effect_error", 0
+
     self.name = name
     self.key = key
     self.cost = cost
     self.maint = maint
     self.preq = preq
     self.free_maint = free_maint
-    self.effects = effects
-    self.global_effects = global_effects
-
-def split_strip(line):
-  return [f.strip() for f in line.split(',')]
-
+    self.sp = False
+    self.preq_fac = None
+    self.effects = [parse_effect(e) for e in effects if parse_effect(e)]
+    self.global_effects = [parse_effect(e) for e in global_effects if parse_effect(e)]
+  
 def parse_soc(st):
   plus = len(st.split('+')) - 1
   minus = len(st.split('-')) - 1
   return plus - minus, st.strip('+-').lower()
-
 
 class FactionRules():
   def __init__(self, fkey, data):
@@ -62,7 +88,7 @@ class Rules():
     self.models = {}
     for off in [3, 7, 11, 15]:
       for line in txt.data.alphax.socio[off:off+4]:
-        f = line.split(',')
+        f = split_strip(line)
         s = [parse_soc(e.strip()) for e in f[2:]]
         self.models[f[0].lower()] = f[1].strip(), s
 
@@ -72,7 +98,8 @@ class Rules():
       self.factions[fkey] = FactionRules(fkey, txt.data2[fkey])
     
     #facilites & SPs
-    self.fac = {}
+    self.facs = {}
+    #deffs = []
     for aline, cline in zip(txt.data.alphax.facilities, txt.data.compat.facilities):
       a = split_strip(aline)
       c = split_strip(cline)
@@ -85,5 +112,10 @@ class Rules():
       except ValueError:
         locs = effects
         globs = []
-      self.fac[key] = Facility(a[0], key, a[1], a[2], a[3], a[4], locs, globs)
-      print a[0], key, a[1], a[2], a[3], a[4], locs, globs
+      #deffs += globs + locs
+      if a[4] == 'Disable':
+        a[4] = None
+      if a[3] != 'Disable': 
+        self.facs[key] = Facility(a[0], key, a[1], a[2], a[3], a[4], locs, globs)
+        print a[0], key, a[1], a[2], a[3], a[4], locs, globs
+    #print list(set(deffs))
