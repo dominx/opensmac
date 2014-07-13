@@ -38,7 +38,7 @@ class GameRoot():
 
   def turn(self):
     #multi 
-    for i in range(len(self.state.factions)):
+    for f in range(len(self.state.factions)):
       self.state.end_turn()
 
 class GameState():
@@ -50,6 +50,7 @@ class GameState():
     self.faction = self.factions[self.fact_num]
     #self.phase = 'move'
     self.year = 2100
+
   def end_turn(self):
     self.fact_num += 1
     if self.fact_num == len(self.factions):
@@ -57,6 +58,7 @@ class GameState():
       self.fact_num = 0
     self.faction = self.factions[self.fact_num]
     self.faction.turn() 
+
 
 class MapWidget(Widget):
   expand = 1, 1
@@ -236,7 +238,7 @@ class MapWidget(Widget):
 
   def do(self, events):
     self.map = self.root.state.map
-    self.events(events)
+    return self.events(events)
 
   def on_mousebutton(self, event):
     sx, sy = self.pos
@@ -289,41 +291,46 @@ class CitizenView(HBox):
         + ['msuperdrone'] * base.superdrones + ['doctor'] * base.specs
       self.children = [Image(image = img.images[citizen]) for citizen in lst] 
       self.set_all(renderer = self.renderer)
-
-class LoadLabel(Label): 
-  def on_mousebutton(self, event): root.load()
-class SaveLabel(Label): 
-  def on_mousebutton(self, event): root.save()
-class NewLabel(Label):
-  def on_mousebutton(self, event): root.new()
-class TurnLabel(Label):
-  def on_mousebutton(self, event): root.turn()
-
-
-def mglue(): return Glue(setsize = (10, 0), expand = (0, 0)) 
-
-menu = HB([
-  LoadLabel(text = 'Load', color = blue1), mglue(), 
-  SaveLabel(text = 'Save', color = blue1), mglue(), 
-  NewLabel(text = 'New', color = blue1), mglue(), 
-  TurnLabel(text = 'End Turn', color = blue1), mglue(), 
-  ])
-
+    return events
 
 root = GameRoot()
 
+def mglue(): return Glue(setsize = (10, 0), expand = (0, 0)) 
+
+def textover(otext, obj):
+  return Stack(children = [obj, Label(color = red, text = otext)]) 
+
+def stack(lst):
+  return Stack(children = lst)
+
+menu = HB([
+  Label(text = 'Load', color = blue1, on_mousebutton = lambda e: root.load()), mglue(), 
+  Label(text = 'Save', color = blue1, on_mousebutton = lambda e: root.save()), mglue(), 
+  Label(text = 'New', color = blue1, on_mousebutton = lambda e: root.new()), mglue(), 
+  Label(text = 'End Turn', color = blue1, on_mousebutton = lambda e: root.turn()), mglue(), 
+  ])
+
 mapwidget = MapWidget(root = root)
-fmap = OPFrame(child = mapwidget, fwidth = 1, color = green3)
+fmap = OPFrame(
+  child = mapwidget, 
+  fwidth = 1, 
+  color = green3)
+
 rootview = Frame(fwidth = 2, child = HDGFrame(ObjView(ref = root, attr = 'state', color = green1, color2 = green2), 'STATE'))
 sqview = Frame(fwidth = 2, child = HDGFrame(ObjView(ref = mapwidget, attr = 'fsquare', color = green1, color2 = green2), 'SQUARE'))
-baseview = Frame(fwidth = 2, child = HDGFrame(ObjView(ref = mapwidget, attr = 'fbase', color = green1, color2 = green2), 'BASE'))
+baseview = Frame(fwidth = 2, child = HDGFrame(bground(ObjView(ref = mapwidget, attr = 'fbase', color = green1, color2 = green2)), 'BASE'))
+baseview2 = Frame(fwidth = 2, child = HDGFrame(bground(ObjView(ref = mapwidget, attr = 'fbase', color = green1, color2 = green2)), 'BASE'))
 nutview = Frame(fwidth = 2, child = HDGFrame(ListView(ref = mapwidget, attr = 'fnutrient', color = green1, color2 = green2), 'NUTRIENT'))
 minview = Frame(fwidth = 2, child = HDGFrame(ListView(ref = mapwidget, attr = 'fmineral', color = green1, color2 = green2), 'MINERAL'))
 engview = Frame(fwidth = 2, child = HDGFrame(ListView(ref = mapwidget, attr = 'fenergy', color = green1, color2 = green2), 'ENERGY'))
 citizenview = Frame(fwidth = 2, child = DGFrame(CitizenView(ref = mapwidget,  attr = 'fbase')))
 
+fmap = stack([fmap, PosBox(childpossizes = [(baseview2, (100, 100), (100, 100))])])
+
 panel2 = VB([nutview, minview, engview])
 panel = HB([rootview, sqview, baseview, citizenview, panel2])
+#panel = HB([rootview, sqview, citizenview, panel2])
 #panel = HB([rootview, sqview, baseview])
 widgets = VB([menu, fmap, panel])
+#widgets = VB([menu, stack([fmap, panel])])
 loop.main(widgets, img.init)

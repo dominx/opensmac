@@ -16,9 +16,9 @@ class Square():
 
   def __repr__(self):
     return str(self.pos)
+  # add_improv, rem_improv
 
   #todo restrictions, buildings, projects, tech
-  # add_improv, rem_improv
   def nutrient(self, base = None, faction = None):
     if base: faction = base.faction
     nuts = DetailedInt()
@@ -103,7 +103,7 @@ class Square():
     eng = DetailedInt(0)
     if self.base:
       eng.add(1, 'base square')
-      #econo
+      #econ
     else:
       if self.bonus == 'energy':
         eng.add(2, 'bonus')
@@ -125,7 +125,7 @@ class Square():
           eng.add(2, 'harness') 
         if self.veg == 'fungus':
           eng.cap(0, 'fungus')
-      #econo
+      #econ
     return eng
 
 

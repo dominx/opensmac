@@ -73,7 +73,7 @@ class CachedTexture(ScaledImage):
         img.blit(pygame.transform.scale(self.source, (4*scale, 2*scale)), (0, 2*scale))
         self.images[(scale, (0,0,0,0))] = img
       return self.images[scale, offs]
-  
+
 
 global images
 images = None

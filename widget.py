@@ -7,7 +7,9 @@ def add((x1, y1), (x2, y2)):
 def sub((x1, y1), (x2, y2)):
   return x1 - x2, y1 - y2
 
-#widget size is internal for drawing, should be set by parent
+# widget size is internal for drawing, should be set by parent
+# get_size returns size widget wants (possibly considering children) but may get something different and has to manage with it
+# set_size lays out children in given size
 
 class Widget(object):
   expand = 0, 0
@@ -33,6 +35,7 @@ class Widget(object):
     self.pos = 0, 0
     return
     self.expand = 0, 0
+
   def set_all(self, **kwargs):
     for key, val in kwargs.iteritems():
       setattr(self, key, val)
@@ -42,18 +45,26 @@ class Widget(object):
       for child in self.children:
         child.set_all(**kwargs)
 
+  def root_widget(self):
+    if 'parent' in dir(self):
+      return self.parent.root_widget()
+    else:
+      return self
+  
   def on_mousebutton(self, event):
     pass
   def on_mousemove(self, event):
     pass
   def on_mouseout(self, event):
     pass
+  
   def inside(self, (mx, my)):
     w, h = self.size
     x, y = self.pos
     return mx > x and mx < x + w - 1 and my > y and my < y + h - 1
 
   def events(self, events):
+    ret = []
     for event in events:
       if event.type == pygame.MOUSEMOTION:
         #mx, my = event.pos
@@ -61,10 +72,15 @@ class Widget(object):
           self.on_mousemove(event) 
         else:
           self.on_mouseout(event)
-      if event.type == pygame.MOUSEBUTTONDOWN:
+          ret += [event]
+      elif event.type == pygame.MOUSEBUTTONDOWN:
         if self.inside(event.pos):
           self.on_mousebutton(event)
-
+        else:
+          ret += [event]
+      else:
+        ret += [event]
+    return ret
 
   def get_size(self):
     if self.setsize:
@@ -76,7 +92,10 @@ class Widget(object):
     self.pos = pos
     self.size = size
  
-  def do(self, events): pass
+  def do(self, events):
+    #print 'basic', events, self
+    return events
+
   def draw(self): pass
 
 class Label(Widget):
@@ -93,7 +112,7 @@ class Label(Widget):
     self.high = False
 
   def do(self, events):
-    self.events(events)
+    return self.events(events)
 
   def get_size(self):
     return self.renderer.font_size(self.text, self.bold), (0, 0), (0, 0)
@@ -119,14 +138,17 @@ class Glue(Widget):
 
 class Bar(Glue):
   def draw(self):
-    print self.pos, self.size
+    #print self.pos, self.size
     (x, y), (w, h) = self.pos, self.size
     self.renderer.frect(x, y, x + w - 1, y + h - 1, self.color)
 
 
 class Parent(Widget):
   def do(self, events):
-    return self.child.do(events)
+    #print 'parent', events, self
+    events = self.child.do(events)
+    #print 'parent out ', events, self.child
+    return events
   def draw(self):
     self.child.draw() 
 
@@ -172,21 +194,28 @@ class OPRFrame(Frame):
     self.renderer.naline(r, t + 1, r, b - 1, self.color)
 
 class MultiParent(Widget):
-  children = []
+  def init(self):
+    self.size = 0, 0
+    self.pos = 0, 0
+    self.children = []
+
   def do(self, events):
+    #print 'multiparent', events, self
     for child in self.children:
-      child.do(events)
-    return []
+      #print '  child in', events, child
+      events = child.do(events)
+      #print '  out', events
+    return self.events(events)
 
   def draw(self):
     #print self, self.pos, self.size
     clip = self.renderer.get_clip()
-    w, h = self.size
-    x, y = self.pos
     self.renderer.set_clip(pygame.Rect(self.pos, self.size))
     for child in self.children:
       child.draw()
     self.renderer.set_clip(clip)
+    #w, h = self.size
+    #x, y = self.pos
     #self.renderer.rect(x, y, x+w-1, y+h-1, red)
 
 class VBox(MultiParent):
@@ -281,16 +310,45 @@ class HBox(MultiParent):
       child.set_size((x + ox, y), (cw, ch))
       ox += cw
 
-class Box(MultiParent):
-  def init(self):
-    self.expand = 1, 1
+class Stack(MultiParent):
   def get_size(self):
     self.childgeo = [child.get_size() for child in self.children]
-    return self.size, self.expand, self.shrink
-    
-  def set_size(self, pos, size):
-    pass 
+    childsizes = [size for size, expand, shrink in self.childgeo]
+    childexps = [expand for size, expand, shrink in self.childgeo]
+    childshrinks = [shrink for size, expand, shrink in self.childgeo]
+    self.size = max([w for w, h in childsizes]+[0]), max([h for w, h in childsizes]+[0])
+    self.childexp = max([w for w, h in childexps]+[0]), max([h for w, h in childexps]+[0])
+    self.childshrink = max([w for w, h in childshrinks]+[0]), max([h for w, h in childshrinks]+[0])
+    return self.size, self.childexp, self.childshrink
 
+  def set_size(self, pos, size):
+    self.size = size
+    self.pos = pos
+    for child in self.children:
+      child.set_size(pos, size)
+
+
+class PosBox(MultiParent):
+  def init(self):
+    self.size = 0, 0
+    self.pos = 0, 0
+    self.childpossizes = []
+
+  @property
+  def children(self):
+    return [child for child, pos, size in self.childpossizes]
+
+  def get_size(self):
+    return (0, 0), (1, 1), (0, 0)
+
+  def set_size(self, pos, size):
+    self.size = size
+    self.pos = pos
+    for child, pos, size in self.childpossizes:
+      size, exp, shrink = child.get_size()
+      child.set_size(pos, size)
+
+  
 class StrLstBox(VBox):
   lines = []
   def set_lines(self, lines):
@@ -299,6 +357,7 @@ class StrLstBox(VBox):
     self.set_all(renderer = self.renderer)
   #def init(self):
   #  self.set_lines(self.lines)
+
 
 class ObjView(VBox):
   def do(self, events):
@@ -310,10 +369,11 @@ class ObjView(VBox):
       else:
         self.children = [Label(text = 'None', color = self.color)]
       self.set_all(renderer = self.renderer)
-      return
-    if self.obj:
+    elif self.obj:
       self.children = [Label(text = k+' : '+repr(v), color = blue1) for k, v in vars(self.obj).iteritems()]
       self.set_all(renderer = self.renderer)
+    #return super(ObjView, self).do(events)
+    return events    
 
 class ListView(VBox):
   def do(self, events):
@@ -324,15 +384,14 @@ class ListView(VBox):
       else:
         self.children = [Label(text = 'None', color = self.color)]
       self.set_all(renderer = self.renderer)
-      return
+    return events
     #if self.obj:
     #  self.children = [Label(text = k+' : '+repr(v), color = blue1) for k, v in vars(self.obj).iteritems()]
     #  self.set_all(renderer = self.renderer)
 
-
-
 class RootWidget(Widget):
   def do(self, events):
+    #print 'root', events
     self.child.do(events) 
     self.child.get_size()
     self.child.set_size((0, 0), self.renderer.get_size())
@@ -340,6 +399,42 @@ class RootWidget(Widget):
     self.child.draw()
     render.flip()
     return True 
+
+class StripedTexture():
+  def __init__(self, color1, color2):
+    self.color1 = color1
+    self.color2 = color2
+    self.w = 0
+    self.h = 0
+    self.surface = None
+  def __call__(self, (w, h)):
+    if self.surface and w <= self.w and h <= self.h:
+      return self.surface.subsurface(pygame.Rect(0, 0, w, h))
+    else:
+      self.surface = pygame.Surface((w, h))
+      for y in range(h):
+        if y % 2:
+          pygame.draw.line(self.surface, self.color1, (0, y), (w, y))
+        else:        
+          pygame.draw.line(self.surface, self.color2, (0, y), (w, y))
+      return self.surface.subsurface(pygame.Rect(0, 0, w, h))     
+
+class TexturedBackground(Widget):
+  def init(self):
+    self.expand = 1, 1
+  def get_size(self):
+    return (0, 0), (0, 0), (0, 0)
+  def draw(self):
+    self.renderer.surface.blit(self.texture(self.size), self.pos)
+
+
+def lab(txt): return Label(text = txt, color = blue1)
+def HB(lst): return HBox(children = lst)
+def VB(lst): return VBox(children = lst)
+def bframe(widget): return OPFrame(child = widget, fwidth = 2, color = blue1)
+
+
+
 
 black = (0, 0, 0)
 red = (255, 0, 0)
@@ -353,29 +448,27 @@ backstripe1 = (8, 20, 32)
 landgrid = (16, 40, 24)
 baseheader = (48, 60, 112)
 
-def lab(txt): return Label(text = txt, color = blue1)
-def HB(lst): return HBox(children = lst)
-def VB(lst): return VBox(children = lst)
-def bframe(widget): return OPFrame(child = widget, fwidth = 2, color = blue1)
+stripes1 = StripedTexture(black, backstripe1)
 
+def bground(widget): return Stack(children = [TexturedBackground(texture = stripes1), widget])
 
-akeys = [k for k, v in txt.data.alphax.rawdata]
+#akeys = [k for k, v in txt.data.alphax.rawdata]
 #sect = txt.data.alphax.citizens
-lstbox = StrLstBox()
+#lstbox = StrLstBox()
 
-class ActLabel(Label):
-  def on_mousebutton(self, event):
-    lstbox.set_lines(getattr(txt.data.alphax, self.text.lower()))
+#class ActLabel(Label):
+#  def on_mousebutton(self, event):
+#    lstbox.set_lines(getattr(txt.data.alphax, self.text.lower()))
 #Label(on_mousebutton = (lambda self, e: lstbox.set_lines(getattr(txt.data.alphax, self.text.lower()))))
 #def ALabel(text
 
 #VBox(children = [lab(line) for line in sect])
-wid = HBox(children = [VBox(children = [ActLabel(text = line, color = blue1) for line in akeys]), Bar(color = blue1), bframe(lstbox)])
-wid = HBox(children = [VBox(children = [ActLabel(text = line, color = blue1) for line in akeys]), bframe(lstbox)])
+#wid = HBox(children = [VBox(children = [ActLabel(text = line, color = blue1) for line in akeys]), Bar(color = blue1), bframe(lstbox)])
+
 #for i in range(1):
 #  wid = bframe(wid)
 
-widfr = bframe(wid)
+#widfr = bframe(wid)
 #wid = OPFrame(child = wid, fwidth = 2, color = blue1)
 
 #menu = HB([lab('fail'), Glue(setsize = (10, 0), expand = (0, 0)), lab('klunk'), Glue(expand = (1, 0)), lab('quit')])
