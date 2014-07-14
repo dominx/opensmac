@@ -12,6 +12,9 @@ def main(widgets, init = lambda: 0):
   while loop:
     
     loop = root.do(get_events())
+    #events = get_events()
+    #if events:
+    #  loop = root.do(events)
     clock.tick(10)
     #raw_input()
 

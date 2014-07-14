@@ -17,6 +17,8 @@ class Widget(object):
   #size = 0, 0
 
   def __init__(self, **kwargs):
+    self.pos = 0, 0
+    self.size = 0, 0
     self.init()
     for key, val in kwargs.iteritems():
       setattr(self, key, val)
@@ -34,7 +36,6 @@ class Widget(object):
     self.shrink = 0, 0
     self.pos = 0, 0
     return
-    self.expand = 0, 0
 
   def set_all(self, **kwargs):
     for key, val in kwargs.iteritems():
@@ -50,7 +51,13 @@ class Widget(object):
       return self.parent.root_widget()
     else:
       return self
-  
+ 
+  def depth(self):
+    if 'parent' in dir(self):
+      return self.parent.depth() + 1
+    else:
+      return 0
+ 
   def on_mousebutton(self, event):
     pass
   def on_mousemove(self, event):
@@ -94,7 +101,7 @@ class Widget(object):
  
   def do(self, events):
     #print 'basic', events, self
-    return events
+    return self.events(events)
 
   def draw(self): pass
 
@@ -145,10 +152,10 @@ class Bar(Glue):
 
 class Parent(Widget):
   def do(self, events):
-    #print 'parent', events, self
+    #print '  '*self.depth(), 'parent', events, self
     events = self.child.do(events)
-    #print 'parent out ', events, self.child
-    return events
+    #print '  '*self.depth(), 'parent out ', events, self.child
+    return self.events(events)
   def draw(self):
     self.child.draw() 
 
@@ -200,11 +207,11 @@ class MultiParent(Widget):
     self.children = []
 
   def do(self, events):
-    #print 'multiparent', events, self
-    for child in self.children:
-      #print '  child in', events, child
+    #print '  '*self.depth(), 'multiparent', events, self
+    for child in reversed(self.children):
+      #print '  '*self.depth(), 'child in', events, child
       events = child.do(events)
-      #print '  out', events
+      #print '  '*self.depth(), 'out', events, child
     return self.events(events)
 
   def draw(self):
@@ -327,7 +334,6 @@ class Stack(MultiParent):
     for child in self.children:
       child.set_size(pos, size)
 
-
 class PosBox(MultiParent):
   def init(self):
     self.size = 0, 0
@@ -347,6 +353,15 @@ class PosBox(MultiParent):
     for child, pos, size in self.childpossizes:
       size, exp, shrink = child.get_size()
       child.set_size(pos, size)
+
+  def do(self, events):
+    #print '  '*self.depth(), 'multiparent', events, self
+    for child in reversed(self.children):
+      #print '  '*self.depth(), 'child in', events, child
+      events = child.do(events)
+      #print '  '*self.depth(), 'out', events, child
+    return events
+
 
   
 class StrLstBox(VBox):
@@ -392,7 +407,8 @@ class ListView(VBox):
 class RootWidget(Widget):
   def do(self, events):
     #print 'root', events
-    self.child.do(events) 
+    if events:
+      self.child.do(events) 
     self.child.get_size()
     self.child.set_size((0, 0), self.renderer.get_size())
     self.renderer.clear()

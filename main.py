@@ -332,5 +332,6 @@ panel = HB([rootview, sqview, baseview, citizenview, panel2])
 #panel = HB([rootview, sqview, citizenview, panel2])
 #panel = HB([rootview, sqview, baseview])
 widgets = VB([menu, fmap, panel])
+#widgets = fmap
 #widgets = VB([menu, stack([fmap, panel])])
 loop.main(widgets, img.init)
