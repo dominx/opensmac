@@ -2,6 +2,8 @@ import pygame, render
 import txt 
 import math
 
+debug_events = False
+
 def add((x1, y1), (x2, y2)):
   return x1 + x2, y1 + y2
 def sub((x1, y1), (x2, y2)):
@@ -79,7 +81,7 @@ class Widget(object):
           self.on_mousemove(event) 
         else:
           self.on_mouseout(event)
-          ret += [event]
+        ret += [event]
       elif event.type == pygame.MOUSEBUTTONDOWN:
         if self.inside(event.pos):
           self.on_mousebutton(event)
@@ -152,9 +154,9 @@ class Bar(Glue):
 
 class Parent(Widget):
   def do(self, events):
-    #print '  '*self.depth(), 'parent', events, self
+    if debug_events: print '  '*self.depth(), 'parent', events, self
     events = self.child.do(events)
-    #print '  '*self.depth(), 'parent out ', events, self.child
+    if debug_events: print '  '*self.depth(), 'child out ', events, self.child
     return self.events(events)
   def draw(self):
     self.child.draw() 
@@ -207,11 +209,11 @@ class MultiParent(Widget):
     self.children = []
 
   def do(self, events):
-    #print '  '*self.depth(), 'multiparent', events, self
+    if debug_events: print '  '*self.depth(), 'multiparent', events, self
     for child in reversed(self.children):
-      #print '  '*self.depth(), 'child in', events, child
+      if debug_events: print '  '*self.depth(), 'child in', events, child
       events = child.do(events)
-      #print '  '*self.depth(), 'out', events, child
+      if debug_events: print '  '*self.depth(), 'out', events, child
     return self.events(events)
 
   def draw(self):
@@ -355,11 +357,11 @@ class PosBox(MultiParent):
       child.set_size(pos, size)
 
   def do(self, events):
-    #print '  '*self.depth(), 'multiparent', events, self
+    if debug_events: print '  '*self.depth(), 'multiparent', events, self
     for child in reversed(self.children):
-      #print '  '*self.depth(), 'child in', events, child
+      if debug_events: print '  '*self.depth(), 'child in', events, child
       events = child.do(events)
-      #print '  '*self.depth(), 'out', events, child
+      if debug_events: print '  '*self.depth(), 'out', events, child
     return events
 
 
@@ -406,8 +408,8 @@ class ListView(VBox):
 
 class RootWidget(Widget):
   def do(self, events):
-    #print 'root', events
     if events:
+      if debug_events: print 'Root', events
       self.child.do(events) 
     self.child.get_size()
     self.child.set_size((0, 0), self.renderer.get_size())

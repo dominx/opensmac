@@ -117,5 +117,5 @@ class Rules():
         a[4] = None
       if a[3] != 'Disable': 
         self.facs[key] = Facility(a[0], key, a[1], a[2], a[3], a[4], locs, globs)
-        print a[0], key, a[1], a[2], a[3], a[4], locs, globs
+        #print a[0], key, a[1], a[2], a[3], a[4], locs, globs
     #print list(set(deffs))
