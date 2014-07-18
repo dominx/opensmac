@@ -216,6 +216,55 @@ class MapWidget(Widget):
     #  self.focus = None
     #  self.fcoords = None
     #  self.fsquare = None
+
+class StripedTexture():
+  def __init__(self, color1, color2):
+    self.color1 = color1
+    self.color2 = color2
+    self.w = 0
+    self.h = 0
+    self.surface = None
+  def __call__(self, (w, h)):
+    if self.surface and w <= self.w and h <= self.h:
+      return self.surface.subsurface(pygame.Rect(0, 0, w, h))
+    else:
+      self.surface = pygame.Surface((w, h))
+      for y in range(h):
+        if y % 2:
+          pygame.draw.line(self.surface, self.color1, (0, y), (w, y))
+        else:        
+          pygame.draw.line(self.surface, self.color2, (0, y), (w, y))
+      return self.surface.subsurface(pygame.Rect(0, 0, w, h))     
+
+class TexturedBackground(Widget):
+  def init(self):
+    self.expand = 1, 1
+  def get_size(self):
+    return (0, 0), (0, 0), (0, 0)
+  def draw(self):
+    self.renderer.surface.blit(self.texture(self.size), self.pos)
+
+
+def lab(txt): return Label(text = txt, color = blue1)
+def HB(lst): return HBox(children = lst)
+def VB(lst): return VBox(children = lst)
+def bframe(widget): return OPFrame(child = widget, fwidth = 2, color = blue1)
+
+black = (0, 0, 0)
+red = (255, 0, 0)
+white = (255, 255, 255)
+blue1 = 92, 124, 188
+bluegreen1 = (24, 184, 228)
+green1 = (112, 156, 56)
+green2 = (48, 76, 40)
+green3 = (32, 56, 32)
+backstripe1 = (8, 20, 32)
+landgrid = (16, 40, 24)
+baseheader = (48, 60, 112)
+
+stripes1 = StripedTexture(black, backstripe1)
+
+def bground(widget): return Stack(children = [TexturedBackground(texture = stripes1), widget])
  
 def DGFrame(chl):
   return OPRFrame(child = OPRFrame(child = chl, fwidth = 2, color = green3), fwidth = 2, color = green2)
